@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>單元 2｜冠詞＋單字</title><style>
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta http-equiv="Cache-Control" content="no-cache"><meta name="viewport" content="width=device-width,initial-scale=1"><title>單元 2｜冠詞＋單字</title><style>
 :root{--tint:#eef3ff;--bg:#f6f7fb;--fg:#1b1d24;--mu:#6b7080;--cd:#fff;--ln:#e3e5ec;--ac:#2f6fed;--ok:#1a9a5a;--bad:#d64545}
 @media(prefers-color-scheme:dark){:root{--tint:#232a3b;--bg:#121318;--fg:#eceef4;--mu:#9aa0b0;--cd:#1d1f27;--ln:#2c2f3a;--ac:#6ea0ff}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,"PingFang TC","Noto Sans TC",sans-serif}
@@ -70,4 +70,4 @@ S.forEach((s,k)=>{const d=document.createElement("div");d.style.cssText="padding
 async function story(){stop();const r=run;$("sa").textContent="■ 停止";for(let k=0;k<S.length&&run===r;k++){const el=$("s"+k);el.style.borderColor="var(--ac)";el.scrollIntoView({block:"center",behavior:"smooth"});const d=await play1(S[k][0]);if(run!==r){el.style.borderColor="";break}await wait(d+1);el.style.borderColor=""}$("sa").textContent="▶ 全文連播"}
 $("sa").onclick=()=>{if($("sa").textContent.startsWith("■"))stop();else story()};$("hn").onclick();
 
-</script><script src="rw.js"></script><script>RW.page("u2",{cards:W.map(c=>c[0]+" "+c[1]),story:S.map(s=>s[0]),hang:()=>$("hr").textContent.startsWith("¡Muy bien")?W[hi][1]:null,score:()=>score,done:()=>done,speakBtn:$("hp"),speakText:()=>$("w").textContent})</script></body></html>
+</script><script>window.PAGEVER="4"</script><script src="rw.js?v=4"></script><script>RW.page("u2",{list:()=>list(),idx:()=>i,cardKey:c=>c[0]+" "+c[1],qkey:()=>W[qi][0]+" "+W[qi][1],hkey:()=>W[hi][1],cards:W.map(c=>c[0]+" "+c[1]),story:S.map(s=>s[0]),hang:()=>$("hr").textContent.startsWith("¡Muy bien")?W[hi][1]:null,score:()=>score,done:()=>done,speakBtn:$("hp"),speakText:()=>$("w").textContent})</script></body></html>
