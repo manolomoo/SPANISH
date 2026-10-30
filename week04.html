@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第二課 第四單元：Estar + Gerundio</title><style>
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>單元 4｜Estar + Gerundio</title><style>
 :root{--tint:#eef3ff;--bg:#f6f7fb;--fg:#1b1d24;--mu:#6b7080;--cd:#fff;--ln:#e3e5ec;--ac:#2f6fed;--ok:#1a9a5a;--bad:#d64545}
 @media(prefers-color-scheme:dark){:root{--tint:#232a3b;--bg:#121318;--fg:#eceef4;--mu:#9aa0b0;--cd:#1d1f27;--ln:#2c2f3a;--ac:#6ea0ff}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,"PingFang TC","Noto Sans TC",sans-serif}
@@ -12,7 +12,7 @@
 .ca.cur{border-color:var(--ac);box-shadow:0 0 0 2px var(--ac) inset}.ca .pic{height:96px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--tint);border-radius:12px;margin-bottom:8px;gap:2px}
 .ca .pic img,.mainpic img{flex:0 0 auto;max-width:31%;object-fit:contain}.ca .es{font-size:20px;font-weight:800}.ca .zh{font-size:15px;margin-top:2px}.ca .tg{font-size:12px;color:var(--mu);margin-top:4px}.ca .sp{position:absolute;top:8px;right:10px;font-size:16px;opacity:.7}.art{color:var(--ac)}
 .mainpic{height:110px;display:flex;align-items:center;justify-content:center;gap:4px}
-</style><style>.pic img{flex:0 0 auto}.tb{width:100%;border-collapse:collapse;font-size:17px}.tb td{padding:8px;border-bottom:1px solid var(--ln);cursor:pointer}.tb td:first-child{color:var(--mu);width:42%}.sen{font-size:22px;font-weight:700;line-height:1.4}</style></head><body><div class="w"><div style="display:flex;flex-wrap:wrap;gap:14px"><a href="index.html" style="color:var(--ac)">← 西班牙文首頁</a><a href="week03.html" style="color:var(--ac)">← 第三單元</a></div><h1>第二課 第四單元：Estar + Gerundio</h1>
+</style><style>.pic img{flex:0 0 auto}.tb{width:100%;border-collapse:collapse;font-size:17px}.tb td{padding:8px;border-bottom:1px solid var(--ln);cursor:pointer}.tb td:first-child{color:var(--mu);width:42%}.sen{font-size:22px;font-weight:700;line-height:1.4}</style></head><body><div class="w"><div style="display:flex;flex-wrap:wrap;gap:14px"><a href="index.html" style="color:var(--ac)">← 西班牙文首頁</a><a href="week03.html" style="color:var(--ac)">← 單元 3</a></div><h1>單元 4｜Estar + Gerundio</h1><div class="box" id="rw"></div>
 <div class="box" style="line-height:1.6"><b>本單元重點：Estar + Gerundio（正在做…）</b><div>公式：主詞 + <b>estar</b>（依人稱變化）+ <b>現在分詞</b>，＝英文 be + -ing。</div><div>例：Hay un niño en la foto. El niño <b>está cogiendo</b> la pelota.（照片裡有一個男孩。男孩正在拿球。）</div><div>單數主詞用 está，複數用 están；現在分詞不隨主詞變化。</div><div class="mu">造句練習用的名詞都來自第一、二單元的單字。</div></div>
 <div class="seg" id="grp"></div>
 <div class="box c"><div class="mu" id="pos"></div><div class="mainpic" id="pic"></div><div class="big" style="font-size:34px" id="w"></div><div style="font-size:22px" id="zh"></div><div class="mu" id="tag"></div><div class="cue" id="cue"></div></div>
@@ -55,4 +55,4 @@ $("o1").onclick=()=>once(list()[i].keys);
 $("pv").onclick=()=>{stop();i=(i-1+list().length)%list().length;render()};$("nx").onclick=()=>{stop();i=(i+1)%list().length;render()};$("pl").onclick=()=>playing?stop():play();
 seg($("grp"),G.map(x=>x[0]),g,k=>{stop();g=k;i=0;render()});seg($("rate"),R.map(r=>r+"x"),R.indexOf(rate),k=>{rate=R[k];au.playbackRate=rate});
 setCue("");render();quiz();drill();
-</script></body></html>
+</script><script src="rw.js"></script><script>RW.page("u4",{cards:[...new Set(G.flatMap(x=>x[1]).map(c=>c.keys[c.keys.length-1]))],score:()=>score,done:()=>done,speakBtn:$("dr"),speakText:()=>$("da").textContent})</script></body></html>

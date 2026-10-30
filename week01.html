@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第二課 第一單元：冠詞</title><style>
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>單元 1｜冠詞</title><style>
 :root{--tint:#eef3ff;--bg:#f6f7fb;--fg:#1b1d24;--mu:#6b7080;--cd:#fff;--ln:#e3e5ec;--ac:#2f6fed;--ok:#1a9a5a;--bad:#d64545}
 @media(prefers-color-scheme:dark){:root{--tint:#232a3b;--bg:#121318;--fg:#eceef4;--mu:#9aa0b0;--cd:#1d1f27;--ln:#2c2f3a;--ac:#6ea0ff}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,"PingFang TC","Noto Sans TC",sans-serif}
@@ -12,8 +12,8 @@
 .ca.cur{border-color:var(--ac);box-shadow:0 0 0 2px var(--ac) inset}.ca .pic{height:96px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--tint);border-radius:12px;margin-bottom:8px;gap:2px}
 .ca .pic img,.mainpic img{flex:0 0 auto;max-width:31%;object-fit:contain}.ca .es{font-size:20px;font-weight:800}.ca .zh{font-size:15px;margin-top:2px}.ca .tg{font-size:12px;color:var(--mu);margin-top:4px}.ca .sp{position:absolute;top:8px;right:10px;font-size:16px;opacity:.7}.art{color:var(--ac)}
 .mainpic{height:110px;display:flex;align-items:center;justify-content:center;gap:4px}
-</style></head><body><div class="w"><div style="display:flex;flex-wrap:wrap;gap:14px"><a href="index.html" style="color:var(--ac)">← 西班牙文首頁</a><a href="week02.html" style="color:var(--ac)">第二單元 →</a></div><h1>第二課 第一單元：冠詞</h1>
-<div class="box" style="line-height:1.6"><b>本週重點：冠詞 Artículos</b><div>定冠詞 Definidos（這個／那個）：陽性單數 el、陰性單數 la、陽性複數 los、陰性複數 las</div><div>不定冠詞 Indefinidos（一個／一些）：陽性單數 un、陰性單數 una、陽性複數 unos、陰性複數 unas</div><div class="mu">小撇步：名詞多半 -o 結尾是陽性、-a 結尾是陰性；複數加 -s。</div></div>
+</style></head><body><div class="w"><div style="display:flex;flex-wrap:wrap;gap:14px"><a href="index.html" style="color:var(--ac)">← 西班牙文首頁</a><a href="week02.html" style="color:var(--ac)">單元 2 →</a></div><h1>單元 1｜冠詞</h1><div class="box" id="rw"></div>
+<div class="box" style="line-height:1.6"><b>本單元重點：冠詞 Artículos</b><div>定冠詞 Definidos（這個／那個）：陽性單數 el、陰性單數 la、陽性複數 los、陰性複數 las</div><div>不定冠詞 Indefinidos（一個／一些）：陽性單數 un、陰性單數 una、陽性複數 unos、陰性複數 unas</div><div class="mu">小撇步：名詞多半 -o 結尾是陽性、-a 結尾是陰性；複數加 -s。</div></div>
 <div class="seg" id="grp"></div>
 <div class="box c"><div class="mu" id="pos"></div><div class="mainpic" id="pic"></div><div class="big" id="w"></div><div style="font-size:24px" id="zh"></div><div class="mu" id="tag"></div><div class="cue" id="cue"></div></div>
 <div class="row"><button class="b" id="o1">念一次</button><button class="b" id="o2">只念名詞</button></div>
@@ -57,4 +57,4 @@ $("o1").onclick=()=>once(ph(list()[i]));$("o2").onclick=()=>once(list()[i][1]);$
 $("pv").onclick=()=>{stop();i=(i-1+list().length)%list().length;render()};$("nx").onclick=()=>{stop();i=(i+1)%list().length;render()};$("pl").onclick=()=>playing?stop():play();
 seg($("grp"),G.map(x=>x[0]),g,k=>{stop();g=k;i=0;render()});seg($("rate"),R.map(r=>r+"x"),R.indexOf(rate),k=>{rate=R[k];au.playbackRate=rate});
 setCue("");render();quiz();
-</script></body></html>
+</script><script src="rw.js"></script><script>RW.page("u1",{cards:W.map(c=>c[0]+" "+c[1]),score:()=>score,done:()=>done,speakBtn:$("hp"),speakText:()=>$("w").textContent})</script></body></html>
