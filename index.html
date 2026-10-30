@@ -1,0 +1,24 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>西班牙文跟讀練習</title><style>
+:root{--bg:#f6f7fb;--fg:#1b1d24;--mu:#6b7080;--cd:#fff;--ln:#e3e5ec;--ac:#2f6fed}
+@media(prefers-color-scheme:dark){:root{--bg:#121318;--fg:#eceef4;--mu:#9aa0b0;--cd:#1d1f27;--ln:#2c2f3a;--ac:#6ea0ff}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,"PingFang TC","Noto Sans TC",sans-serif}
+.w{max-width:560px;margin:0 auto;padding:28px 16px 40px}h1{font-size:28px;margin:0 0 6px}.sub{color:var(--mu);font-size:16px;margin:0 0 22px;line-height:1.5}
+a.card{display:block;background:var(--cd);border:1px solid var(--ln);border-radius:16px;padding:20px;margin-bottom:14px;color:inherit;text-decoration:none;min-height:88px}
+a.card:active{transform:scale(.98)}.t{display:flex;justify-content:space-between;align-items:center}.wk{font-size:24px;font-weight:800}
+.n{background:var(--ac);color:#fff;border-radius:999px;padding:4px 12px;font-size:14px}.s{color:var(--mu);margin-top:10px;font-size:16px}.go{color:var(--ac);margin-top:10px;font-weight:600}
+</style></head><body><div class="w"><h1 style="margin-top:12px">西班牙文跟讀練習</h1><p class="sub">自然語音＋回音法：先聽、心裡回音、再大聲跟讀</p><div id="list"></div></div>
+<script>
+// 新增：在 LESSONS 加一課，或在某課的 units 加一個單元（最新的課排最上面）
+const LESSONS = [
+  { lesson: "第二課", n: 2, units: [
+    { name: "第一單元", file: "week01.html", title: "冠詞 el / la / los / las、un / una / unos / unas", count: 24 },
+    { name: "第二單元", file: "week02.html", title: "冠詞＋單字、短文 Un día de playa con Pepe", count: 29 },
+    { name: "第三單元", file: "week03.html", title: "動詞 Verbos 1：10 個動詞的現在式變化＋現在分詞", count: 70 },
+    { name: "第四單元", file: "week04.html", title: "Estar + Gerundio：正在做…（看圖造句）", count: 27 },
+  ]},
+];
+document.getElementById("list").innerHTML = LESSONS.sort((a,b)=>b.n-a.n).map(L=>
+ `<h2 style="font-size:22px;margin:18px 0 10px">${L.lesson}</h2>`+L.units.map(u=>
+ `<a class="card" href="${u.file}"><div class="t"><span class="wk">${u.name}</span><span class="n">${u.count} 個單字</span></div><div class="s">${u.title}</div><div class="go">開始練習 →</div></a>`).join("")).join("");
+</script></body></html>
