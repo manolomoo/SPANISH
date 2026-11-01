@@ -11,7 +11,8 @@ const KEY="esRW1";let MEM=null,LSOK=true;try{localStorage.setItem("__t","1");loc
 const ld=()=>{if(!LSOK)return MEM||(MEM={});try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return MEM||{}}};
 const sv=d=>{MEM=d;if(LSOK)try{localStorage.setItem(KEY,JSON.stringify(d))}catch(e){LSOK=false}};
 const POO=n=>n?"💩".repeat(Math.min(n,4)):"";const pget=k=>((ld().pm||{})[k])||0;
-const last={};function pinc(k){const t=Date.now();if(last[k]&&t-last[k]<2500)return pget(k);last[k]=t;const d=ld();d.pm=d.pm||{};d.pm[k]=Math.min((d.pm[k]||0)+1,4);sv(d);toast("+💩");return d.pm[k]}
+const last={};function emit(o){try{window.dispatchEvent(new CustomEvent("rwx",{detail:o}))}catch(e){}}
+function pinc(k,force){const t=Date.now();if(!force&&last[k]&&t-last[k]<2500)return 0;last[k]=t;const d=ld();d.pm=d.pm||{};const was=d.pm[k]||0;d.pm[k]=Math.min(was+1,4);sv(d);toast("+💩");return was?2:1}
 function toast(m){let e=document.getElementById("rw-t");if(!e){e=document.createElement("div");e.id="rw-t";document.body.appendChild(e)}e.textContent=m;e.className="";void e.offsetWidth;e.className="on"}
 function verCheck(){const pv=window.PAGEVER;if(!pv)return;fetch("version.txt?"+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"").then(v=>{v=(v||"").trim();if(v&&v!==pv){const b=document.createElement("div");b.className="rw-ban";b.innerHTML="有新版本 ✨ <button>點我更新</button>";b.querySelector("button").onclick=()=>location.replace(location.pathname+"?v="+v);document.body.prepend(b)}}).catch(()=>{})}
 function dog(st,sz){sz=sz||44;const f=st?"#16171c":"none",s=st?"#16171c":"#a3a8b5",e=st?"#fff":"#a3a8b5";
@@ -30,10 +31,10 @@ const css=document.createElement("style");css.textContent=`.rw-pop{position:fixe
 .pm{font-size:15px;min-height:18px;letter-spacing:1px}.ca .pm{position:absolute;left:8px;top:6px;font-size:13px}.rw-fab{position:fixed;right:12px;bottom:12px;z-index:96;background:var(--cd,#fff);border:1px solid var(--ln);border-radius:999px;padding:4px 12px 4px 6px;display:flex;align-items:center;gap:6px;font-weight:700;box-shadow:0 4px 14px #0003;color:var(--fg)}
 .rw-ban{position:sticky;top:0;z-index:99;background:#f5b301;color:#111;padding:10px;text-align:center;font-weight:700}.rw-ban button{margin-left:8px;padding:6px 12px;border-radius:8px;border:0;background:#111;color:#fff}
 .rwk{display:flex;align-items:center;gap:10px}.rwr{font-size:12px;color:var(--mu);line-height:1.6}`;document.head.appendChild(css);
-window.RW={UNITS,dog,ust,tst,TN,RULE,celebrate,pget,ld,
+window.RW={LSOK:()=>LSOK,toast,emit,UNITS,dog,ust,tst,TN,RULE,celebrate,pget,ld,
 page(uid,cfg){const U=UNITS.find(x=>x.id===uid);const box=document.getElementById("rw");
-const sess={quiz:[0,0],hw:null};cfg.allCards=cfg.cards;
-function upd(t,fn){const d=ld();d[uid]=d[uid]||{};const x=d[uid][t]=d[uid][t]||{};const before=ust(U),bt=x.c?2:x.s?1:0;fn(x);x.s=1;sv(d);const at=x.c?2:1,after=ust(U);
+const sess={quiz:[0,0],hw:null};cfg.allCards=cfg.cards;RW.cfg=cfg;RW.uid=uid;
+function upd(t,fn){const d=ld();d[uid]=d[uid]||{};const x=d[uid][t]=d[uid][t]||{};const before=ust(U),bt=x.c?2:x.s?1:0;fn(x);x.s=1;sv(d);const at=x.c?2:1,after=ust(U);if(at===2&&bt!==2)emit({uid,t:"crown",ty:t});if(after===2&&before!==2)emit({uid,t:"king"});
 if(after===2&&before!==2)celebrate("單元 "+U.n+" 完成！<br>獲得 黑狗王 👑");else if(at===2&&bt!==2)celebrate(TN[t]+" 完成！<br>黑狗戴上皇冠 👑");else if(bt===0)celebrate("開始 "+TN[t]+"<br>獲得 黑狗 🐾",1);draw()}
 function prog(t){const x=((ld()[uid]||{})[t])||{};if(x.c)return"完成";if(t==="cards")return (x.h||[]).length+" / "+cfg.cards.length;if(t==="story")return (x.h||[]).length+" / "+cfg.story.length;if(t==="speak")return (x.h||[]).length+" / 5";if(t==="hang")return (x.h||[]).length+" / 3";if(t==="quiz")return x.s?"最佳 "+(x.b||"—"):"未開始";return""}
 var draw=function(){const s=ust(U);box.innerHTML=`<div class="rwk">${dog(s,56)}<div><b style="font-size:18px">${s===2?"黑狗王！本單元全部完成":s?"黑狗徽章收集中":"還沒開始，做練習就能得到黑狗"}</b><div class="mu" style="font-size:13px">每種題型：灰色虛線＝未開始・黑狗＝已練習・戴皇冠＝完成；全部完成 → 單元黑狗王</div></div></div>
@@ -42,7 +43,7 @@ ${LSOK?"":'<div style="color:#d64545;font-size:13px">⚠️ 這個瀏覽器無�
 const r=document.getElementById("rwreset");if(r)r.onclick=e=>{e.preventDefault();if(confirm("確定重設本單元的黑狗進度？")){const d=ld();delete d[uid];sv(d);draw()}}}
 const heard=(t,list,k)=>{if(!list.includes(k))return;upd(t,x=>{x.h=x.h||[];if(!x.h.includes(k))x.h.push(k);if(x.h.length>=list.length)x.c=1})};
 const _p=window.play1;window.play1=function(k){cfg.onPlay&&cfg.onPlay(k);heard("cards",cfg.cards,k);if(cfg.story)heard("story",cfg.story,k);return _p.apply(this,arguments)};
-const _q=window.quiz;window.quiz=function(){_q.apply(this,arguments);const sc=cfg.score(),dn=cfg.done();if(dn>sess.quiz[1]){sess.quiz=[sc,dn];cfg.onQuiz&&cfg.onQuiz();upd("quiz",x=>{const pct=Math.round(sc/dn*100);if(dn>=10&&(!x.b||pct>parseInt(x.b)))x.b=pct+"%（"+dn+" 題）";if(dn>=10&&sc/dn>=.8)x.c=1})}};
+const _q=window.quiz;window.quiz=function(){_q.apply(this,arguments);const sc=cfg.score(),dn=cfg.done();if(dn>sess.quiz[1]){const ok=sc>sess.quiz[0];sess.quiz=[sc,dn];cfg.onQuiz&&cfg.onQuiz(ok);upd("quiz",x=>{const pct=Math.round(sc/dn*100);if(dn>=10&&(!x.b||pct>parseInt(x.b)))x.b=pct+"%（"+dn+" 題）";if(dn>=10&&sc/dn>=.8)x.c=1})}};
 cfg.speakBtn.addEventListener("click",()=>{const k=cfg.speakText();cfg.onSpeak&&cfg.onSpeak(k);upd("speak",x=>{x.h=x.h||[];if(!x.h.includes(k))x.h.push(k);if(x.h.length>=5)x.c=1})});
 if(cfg.hang){const _h=window.hang;window.hang=function(){_h.apply(this,arguments);const w=cfg.hang();if(w&&w!==sess.hw){sess.hw=w;cfg.onHang&&cfg.onHang(w)}if(w)upd("hang",x=>{x.h=x.h||[];if(!x.h.includes(w))x.h.push(w);if(x.h.length>=3)x.c=1})}}
 const P=t=>uid+"|"+t+"|";
@@ -59,8 +60,8 @@ RW.deco=deco;const _r=window.render;window.render=function(){_r.apply(this,argum
 const _q2=window.quiz;window.quiz=function(){_q2.apply(this,arguments);deco()};
 if(cfg.hang){const _h2=window.hang;window.hang=function(){_h2.apply(this,arguments);deco()}}
 if(cfg.drillFn){const n=cfg.drillFn;const o=window[n];window[n]=function(){o.apply(this,arguments);deco()}}
-cfg.onPlay=k=>{const cs=cfg.list().map(cfg.cardKey);if(cfg.allCards.includes(k))pinc(P("cards")+k);if(cfg.story&&cfg.story.includes(k))pinc(P("story")+k);deco()};
-cfg.onQuiz=()=>{pinc(P("quiz")+cfg.qkey());deco()};cfg.onSpeak=k=>{pinc(P("speak")+k);deco()};cfg.onHang=w=>{pinc(P("hang")+w);deco()};
+cfg.onPlay=k=>{let r;if(cfg.allCards.includes(k)&&(r=pinc(P("cards")+k)))emit({uid,t:"cards",isNew:r===1});if(cfg.story&&cfg.story.includes(k)&&(r=pinc(P("story")+k)))emit({uid,t:"story",isNew:r===1});deco()};
+cfg.onQuiz=ok=>{const r=pinc(P("quiz")+cfg.qkey(),1);emit({uid,t:"quiz",isNew:r===1,ok});deco()};cfg.onSpeak=k=>{const r=pinc(P("speak")+k);if(r)emit({uid,t:"speak",isNew:r===1});deco()};cfg.onHang=w=>{const r=pinc(P("hang")+w,1);emit({uid,t:"hang",isNew:r===1,ok:true});deco()};
 draw();deco();verCheck()},
 home(el,sum){verCheck();const all=UNITS.flatMap(U=>U.types.map(t=>tst(U.id,t)));const kings=UNITS.filter(U=>ust(U)===2).length;
 sum.innerHTML=`<div class="rwk">${dog(kings===UNITS.length?2:all.some(v=>v)?1:0,52)}<div><b>我的黑狗進度</b><div style="font-size:15px">黑狗王 ${kings} / ${UNITS.length} 個單元・題型完成 ${all.filter(v=>v===2).length} / ${all.length}・已練習 ${all.filter(v=>v).length} / ${all.length}</div></div></div><div class="rwr">做任何一種練習就得到黑狗；某題型達成規則後黑狗戴上皇冠；一個單元的題型全部完成就是「黑狗王」。進度存在這台裝置的瀏覽器裡。</div>`;
