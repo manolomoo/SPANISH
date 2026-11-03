@@ -35,14 +35,14 @@ au.onended=fin;au.onerror=fin;au.onpause=fin;au.onplaying=()=>{if(!st)st=perform
 const p=au.play();if(p)p.catch(fin);setTimeout(fin,15000)})}
 const wait=s=>new Promise(r=>setTimeout(r,s*1000));
 async function seq(keys){let t=0;for(const k of keys){t+=await play1(k)}return t}
-function setCue(p){$("cue").textContent={listen:"聽",echo:"回音・心裡默念",shadow:"跟讀・大聲說出來"}[p]||"按「回音法播放」開始";$("cue").style.color=p==="shadow"?"var(--ac)":p?"":"var(--mu)"}
+function setCue(p,lb){$("cue").textContent=(p?lb||"":"")+({listen:"聽",echo:"回音・心裡默念",shadow:"跟讀・大聲說出來"}[p]||"按「回音法播放」開始");$("cue").style.color=p==="shadow"?"var(--ac)":p?"":"var(--mu)"}
 function grid(){$("ga").innerHTML=list().map((c,k)=>`<div class="ca${k===i?" cur":""}" data-k="${k}"><span class="sp">🔊</span><div class="pic">${pics(c.pic,84)}</div><div class="es" style="font-size:17px">${c.es}</div><div class="zh">${c.zh}</div><div class="tg">${c.tag}</div></div>`).join("");
 $("ga").querySelectorAll(".ca").forEach(el=>el.onclick=()=>{stop();i=+el.dataset.k;render();once(list()[i].keys)})}
-function render(){const L=list(),c=L[i];$("pos").textContent=(i+1)+" / "+L.length;$("w").textContent=c.keys.length>1&&c.keys[0]!==c.es?c.keys[0]+" "+c.es:c.es;$("zh").textContent=c.zh;$("tag").textContent=c.tag;$("pic").innerHTML=pics(c.pic,96);grid();$("pl").textContent=playing?"暫停":"▶ 回音法播放"}
+function render(){const L=list(),c=L[i];$("pos").textContent=(i+1)+" / "+L.length;$("w").textContent=c.keys.length>1&&c.keys[0]!==c.es&&!c.es.includes("→")?c.keys[0]+" "+c.es:c.es;$("zh").textContent=c.zh;$("tag").textContent=c.tag;$("pic").innerHTML=pics(c.pic,96);grid();$("pl").textContent=playing?"暫停":"▶ 回音法播放"}
 function stop(){run++;au.pause();playing=false;setCue("");$("w").classList.remove("hl");render()}
 async function once(keys){stop();await seq(keys)}
 async function play(){const r=++run;playing=true;render();const ok=()=>run===r;const L=list();
-while(ok()&&i<L.length){render();for(let k=0;k<2;k++){setCue("listen");$("w").classList.add("hl");const d=await seq(L[i].keys);$("w").classList.remove("hl");if(!ok())return;setCue("echo");await wait(Math.min(d,3));if(!ok())return;setCue("shadow");await wait(Math.max(1.5,d+1));if(!ok())return}i++}
+while(ok()&&i<L.length){render();const ks=L[i].keys;for(let j=0;j<ks.length;j++){const w=ks[j],lb=(ks.length>1?"【"+(j+1)+"/"+ks.length+"】":"")+w+"｜";for(let k=0;k<2;k++){setCue("listen",lb);$("w").textContent=w;$("w").classList.add("hl");console.log("ECHO listen "+w+" "+k);const d=await play1(w);$("w").classList.remove("hl");if(!ok())return;setCue("echo",lb);console.log("ECHO echo "+w);await wait(Math.min(d,3));if(!ok())return;setCue("shadow",lb);console.log("ECHO shadow "+w);await wait(Math.max(1.5,d+1));if(!ok())return}}i++}
 if(ok()){playing=false;i=0;setCue("");render()}}
 function quiz(){const q=Q[qi];$("sc").textContent="答對 "+score+" / "+done;$("qw").textContent=pk?q.say:q.q;$("qz").textContent=q.z;$("qo").innerHTML="";
 q.o.forEach(o=>{const b=document.createElement("button");b.className="b";b.textContent=o;if(pk&&o===q.a){b.style.background="var(--ok)";b.style.color="#fff"}else if(pk===o)b.style.color="var(--bad)";
@@ -55,4 +55,4 @@ $("o1").onclick=()=>once(list()[i].keys);
 $("pv").onclick=()=>{stop();i=(i-1+list().length)%list().length;render()};$("nx").onclick=()=>{stop();i=(i+1)%list().length;render()};$("pl").onclick=()=>playing?stop():play();
 seg($("grp"),G.map(x=>x[0]),g,k=>{stop();g=k;i=0;render()});seg($("rate"),R.map(r=>r+"x"),R.indexOf(rate),k=>{rate=R[k];au.playbackRate=rate});
 setCue("");render();quiz();drill();
-</script><script>window.PAGEVER="5"</script><script src="rw.js?v=5"></script><script src="rpg.js?v=5"></script><script>RW.page("u3",{qans:()=>Q[qi].a,list:()=>list(),idx:()=>i,cardKey:c=>c.keys[c.keys.length-1],qkey:()=>Q[qi].say,drillFn:"drill",cards:[...new Set(G.flatMap(x=>x[1]).map(c=>c.keys[c.keys.length-1]))],score:()=>score,done:()=>done,speakBtn:$("dr"),speakText:()=>$("da").textContent});RPG.page()</script></body></html>
+</script><script>window.PAGEVER="6"</script><script src="rw.js?v=6"></script><script src="rpg.js?v=6"></script><script>RW.page("u3",{qans:()=>Q[qi].a,list:()=>list(),idx:()=>i,cardKey:c=>c.keys[c.keys.length-1],qkey:()=>Q[qi].say,drillFn:"drill",cards:[...new Set(G.flatMap(x=>x[1]).map(c=>c.keys[c.keys.length-1]))],score:()=>score,done:()=>done,speakBtn:$("dr"),speakText:()=>$("da").textContent});RPG.page()</script></body></html>
