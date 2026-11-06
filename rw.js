@@ -1,6 +1,7 @@
 /* 黑狗獎勵機制 */
 (function(){
 const UNITS=[
+ {id:"u0",n:0,file:"week00.html",name:"文法術語 Gramática",title:"學語言常用的文法詞：西／英／中＋例子（工具單元）",count:"23 個術語",types:["cards","quiz","speak"]},
  {id:"u1",n:1,file:"week01.html",name:"冠詞",title:"定冠詞 el / la / los / las、不定冠詞 un / una / unos / unas",count:"24 個單字",types:["cards","quiz","speak"]},
  {id:"u2",n:2,file:"week02.html",name:"冠詞＋單字",title:"用冠詞認識新單字、短文 Un día de playa con Pepe",count:"29 個單字",types:["cards","quiz","speak","hang","story"]},
  {id:"u3",n:3,file:"week03.html",name:"動詞 Verbos 1",title:"10 個常用動詞的現在式變化＋現在分詞",count:"10 個動詞",types:["cards","quiz","speak"]},
