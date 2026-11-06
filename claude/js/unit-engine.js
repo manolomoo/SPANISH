@@ -1,6 +1,7 @@
 // ===========================================================
 // 單元引擎：把 G/Q/D（或 W 單字表）資料轉成卡片／測驗／口說結構，
 // 並實作回音法播放器、測驗流程、口說流程、短文逐句播放。
+// 圖卡：西文／英文、動詞／現在分詞各自獨立，每張走完聽→回音→跟讀才換下一張。
 // 禁止使用 speechSynthesis；一律用 AUDIO_MANIFEST 對應的 mp3。
 // ===========================================================
 "use strict";
@@ -31,7 +32,12 @@ const UnitEngine = (function () {
     return m[`${voice}|${text}`] || null;
   }
 
+  function normText(s) {
+    return String(s || "").replace(/\s+/g, " ").trim().toLowerCase();
+  }
+
   function segmentsFromKeys(keys, mainEs) {
+    // 口說示範仍可列出多個音檔按鈕，但每個按鈕各自播放，不會自動連成一輪。
     // mainEs 有時只是給人看的組合字串（例如「vocabulario ↔ vocabulary」），
     // 本身沒有對應音檔；這種情況改以 keys 列表本身建立播放段落。
     const seen = new Set();
@@ -49,6 +55,76 @@ const UnitEngine = (function () {
       segs.push({ voice: p.voice, text: p.text, label });
     });
     return segs;
+  }
+
+  // 圖卡練習：西文與英文必須拆成各自獨立的卡片；
+  // 動詞與現在分詞、詞條與例句也各自一張，避免同一輪裡接著念。
+  function practiceItemsFromCard(c) {
+    const raw = [];
+    const seen = new Set();
+    const push = (voice, text, role) => {
+      const t = String(text || "").trim();
+      if (!t) return;
+      const sig = voice + "|" + normText(t);
+      if (seen.has(sig)) return;
+      seen.add(sig);
+      raw.push({ voice, text: t, role });
+    };
+    (c.keys || []).forEach((k) => {
+      const p = parseKeyPair(k);
+      const role = String(k).startsWith("en:") ? "en" : String(k).startsWith("ex:") ? "ex" : "es";
+      push(p.voice, p.text, role);
+    });
+    if (!raw.length && c.es) push(audioSrcFor("en", c.es) && !audioSrcFor("es", c.es) ? "en" : "es", c.es, audioSrcFor("en", c.es) && !audioSrcFor("es", c.es) ? "en" : "es");
+
+    const heads = new Set(
+      raw.filter((x) => x.role !== "ex").map((x) => x.voice + "|" + normText(x.text))
+    );
+    let kept = raw.filter((x) => x.role !== "ex" || !heads.has(x.voice + "|" + normText(x.text)));
+    if (!kept.length && c.es) kept = [{ voice: "es", text: String(c.es).trim(), role: "es" }];
+    return kept.map((x) => ({
+      voice: x.voice,
+      text: x.text,
+      role: x.role,
+      label: x.role === "en" ? "英文" : x.role === "ex" ? "例句" : "西文",
+    }));
+  }
+
+  function presentPracticeItem(c, item, index, total) {
+    if (total === 1) {
+      const same = normText(c.es) === normText(item.text);
+      return {
+        es: same ? c.es : item.text,
+        zh: c.zh || "",
+        tag: c.tag || (item.role === "en" ? "英文" : item.role === "ex" ? "例句" : ""),
+        tip: c.tip || "",
+      };
+    }
+    let zh = c.zh || "";
+    let tag = "";
+    let tip = "";
+    if (item.role === "en") {
+      zh = zh.replace(/｜.*$/, "").trim().replace(/（西）/g, "（英）");
+      if (!zh) zh = "英文";
+      else if (!/英/.test(zh)) zh += "（英文）";
+      tag = "英文";
+    } else if (item.role === "ex") {
+      zh = c.tip || (zh ? "例：" + zh : "例句");
+      tag = "例句";
+    } else {
+      const oneWord = !/\s/.test(item.text);
+      const head = normText(String(c.es || "").split(/→|↔/)[0]);
+      if (oneWord && /(?:ando|iendo|yendo)$/i.test(item.text) && normText(item.text) !== head) {
+        zh = zh ? zh + "（現在分詞）" : "現在分詞";
+        tag = "現在分詞";
+      } else if (index === 0) {
+        tag = c.tag || item.label || "西文";
+        tip = c.tip || "";
+      } else {
+        tag = item.label || c.tag || "西文";
+      }
+    }
+    return { es: item.text, zh, tag, tip };
   }
 
   // D（口說）項目：若有 pre（照片造句的已知句），示範要先播 pre 再播 a，順序不能顛倒
@@ -83,22 +159,41 @@ const UnitEngine = (function () {
   // -------- adapters: G/Q/D 格式 (u0, u3, u4, u5) --------
   function fromGQD(unitId, data) {
     const cards = [];
+    const aliases = [];
     (data.G || []).forEach((grp, gi) => {
       const [gname, list] = grp;
+      const seenInGroup = new Map();
       (list || []).forEach((c, ci) => {
-        cards.push({
-          id: `${unitId}:c:${gi}:${ci}`,
-          group: gname,
-          es: c.es,
-          zh: c.zh,
-          tag: c.tag || "",
-          tip: c.tip || "",
-          pic: c.pic || null,
-          col: c.col || null,
-          segments: segmentsFromKeys(c.keys, c.es),
+        const legacyId = `${unitId}:c:${gi}:${ci}`;
+        const items = practiceItemsFromCard(c);
+        let emitted = 0;
+        items.forEach((item, si) => {
+          const sig = item.voice + "|" + normText(item.text);
+          if (seenInGroup.has(sig)) {
+            aliases.push({ fromId: legacyId, toId: seenInGroup.get(sig) });
+            return;
+          }
+          const shown = presentPracticeItem(c, item, si, items.length);
+          const id = emitted === 0 ? legacyId : `${legacyId}:k${emitted}`;
+          emitted++;
+          seenInGroup.set(sig, id);
+          cards.push({
+            id,
+            legacyId,
+            group: gname,
+            es: shown.es,
+            zh: shown.zh,
+            tag: shown.tag,
+            tip: shown.tip,
+            pic: c.pic || null,
+            col: c.col || null,
+            lang: item.voice,
+            segments: [{ voice: item.voice, text: item.text, label: item.label }],
+          });
         });
       });
     });
+    cards.aliases = aliases;
     const quiz = (data.Q || []).map((q, i) => ({
       id: `${unitId}:q:${i}`,
       qText: q.q,
@@ -115,7 +210,7 @@ const UnitEngine = (function () {
       col: d.col || null,
       segments: speakSegmentsFromD(d),
     }));
-    return { cards, quiz, speak, story: [], groups: (data.G || []).map((g) => g[0]) };
+    return { cards, aliases, quiz, speak, story: [], groups: (data.G || []).map((g) => g[0]) };
   }
 
   // -------- adapters: W 單字表格式 (u1, u2) --------
@@ -132,10 +227,9 @@ const UnitEngine = (function () {
         tag: ARTICLE_TAG[article] || article,
         tip: "",
         pic: null,
-        segments: [
-          { voice: "es", text: full, label: "冠詞＋名詞" },
-          { voice: "es", text: word, label: "單字" },
-        ],
+        lang: "es",
+        legacyId: `${unitId}:c:0:${i}`,
+        segments: [{ voice: "es", text: full, label: "西文" }],
       };
     });
 
@@ -196,8 +290,118 @@ const UnitEngine = (function () {
   }
 
   // ===========================================================
+  // 回音法：每個單字／句子各自走完「聽 → 回音 → 跟讀」兩輪，才換下一個。
+  // 等待時間對齊原站 week00／week03：回音 min(音檔長度, 3) 秒，
+  // 跟讀 max(1.5, 音檔長度+1) 秒。音檔長度用 duration/語速。
+  // ===========================================================
+  function echoWaits(durationSec) {
+    const d = typeof durationSec === "number" && isFinite(durationSec) && durationSec > 0 ? durationSec : 0.9;
+    return { echo: Math.min(d, 3), shadow: Math.max(1.5, d + 1) };
+  }
+
+  function EchoSession(io) {
+    this.io = io || {};
+    this.gen = 0;
+    this.paused = false;
+    this.running = false;
+    this.index = 0;
+    this.cards = [];
+    this.jumpTo = null;
+  }
+
+  EchoSession.prototype.stop = function () {
+    this.gen++;
+    this.running = false;
+    this.paused = false;
+    this.jumpTo = null;
+    if (this.io.abort) this.io.abort();
+  };
+
+  EchoSession.prototype.pause = function () {
+    if (!this.running) return;
+    this.paused = true;
+  };
+
+  EchoSession.prototype.resume = function () {
+    if (!this.running) return;
+    this.paused = false;
+  };
+
+  EchoSession.prototype.skipTo = function (index) {
+    if (!this.running) return;
+    if (index < 0) index = 0;
+    if (index > this.cards.length) index = this.cards.length;
+    this.jumpTo = index;
+    if (this.io.abort) this.io.abort();
+  };
+
+  EchoSession.prototype.begin = function (cards, index) {
+    this.stop();
+    this.cards = cards || [];
+    this.index = Math.max(0, Math.min(index || 0, Math.max(0, this.cards.length - 1)));
+    this.jumpTo = null;
+    this.paused = false;
+    this.running = this.cards.length > 0;
+    const gen = this.gen;
+    if (this.running) this._loop(gen);
+    else if (this.io.onFinish) this.io.onFinish();
+  };
+
+  EchoSession.prototype._loop = async function (gen) {
+    const io = this.io;
+    while (gen === this.gen && this.index < this.cards.length) {
+      const card = this.cards[this.index];
+      if (io.onCard) io.onCard(card, this.index, this.cards.length);
+      let abortedCard = false;
+      for (let round = 1; round <= 2; round++) {
+        if (gen !== this.gen) return;
+        if (io.onPhase) io.onPhase(card, round, "listen");
+        const played = await io.play(card);
+        if (gen !== this.gen) return;
+        if (played === "abort" || this.jumpTo != null) { abortedCard = true; break; }
+        const waits = echoWaits(played && played.duration);
+        if (io.onPhase) io.onPhase(card, round, "echo");
+        const w1 = await io.wait(waits.echo);
+        if (gen !== this.gen) return;
+        if (w1 === "abort" || this.jumpTo != null) { abortedCard = true; break; }
+        if (io.onPhase) io.onPhase(card, round, "shadow");
+        const w2 = await io.wait(waits.shadow);
+        if (gen !== this.gen) return;
+        if (w2 === "abort" || this.jumpTo != null) { abortedCard = true; break; }
+      }
+      if (gen !== this.gen) return;
+      if (abortedCard) {
+        if (this.jumpTo != null) {
+          this.index = this.jumpTo;
+          this.jumpTo = null;
+          continue;
+        }
+        return;
+      }
+      if (io.onDoneCard) io.onDoneCard(card);
+      if (gen !== this.gen) return;
+      if (this.jumpTo != null) {
+        this.index = this.jumpTo;
+        this.jumpTo = null;
+        continue;
+      }
+      this.index++;
+    }
+    if (gen !== this.gen) return;
+    this.running = false;
+    this.paused = false;
+    if (io.onFinish) io.onFinish();
+  };
+
+  // ===========================================================
   // 回音法播放器（圖卡）
   // ===========================================================
+  const PHASE_TEXT = {
+    listen: "聽",
+    echo: "回音・心裡默念",
+    shadow: "跟讀・大聲說出來",
+  };
+
   function renderPic(pic, seedText, explicitColor) {
     return window.renderPic ? window.renderPic(pic, seedText, explicitColor) : document.createElement("div");
   }
@@ -205,28 +409,47 @@ const UnitEngine = (function () {
   function CardEchoPlayer(container, unitId, allCards, groups) {
     const self = this;
     self.unitId = unitId;
-    self.allCards = allCards;
+    self.allCards = allCards && allCards.length ? allCards : [];
     self.groups = groups && groups.length > 1 ? groups : [];
-    self.cards = allCards;
+    self.filter = null;
     self.idx = 0;
-    self.segIdx = 0;
-    self.round = 1;
-    self.phase = "listen"; // listen -> echo -> shadow
-    self.timer = null;
+    self.phase = "";
+    self.round = 0;
+    self.playing = false;
     self.paused = false;
-    self.speed = parseFloat(localStorage.getItem("esp_speed") || "1");
+    self.finishedUnit = false;
+    self.timer = null;
+    self.speed = parseFloat(localStorage.getItem("esp_speed") || "0.8");
+    if (![0.6, 0.8, 1].includes(self.speed)) self.speed = 0.8;
 
     self.audio = new Audio();
     self.audio.preservesPitch = true;
     self.audio.mozPreservesPitch = true;
     self.audio.webkitPreservesPitch = true;
 
+    if (window.Rewards && Rewards.migrateSplitCards) {
+      Rewards.migrateSplitCards(unitId, self.allCards, self.allCards.aliases || []);
+    }
+    if (window.__activeEcho && window.__activeEcho !== self) window.__activeEcho.stop();
+    window.__activeEcho = self;
+
+    self.session = new EchoSession({
+      onCard: function (card, index) { self.onSessionCard(card, index); },
+      onPhase: function (card, round, phase) { self.onSessionPhase(card, round, phase); },
+      play: function (card) { return self.playCardAudio(card); },
+      wait: function (sec) { return self.waitSec(sec); },
+      onDoneCard: function (card) { self.onSessionDone(card); },
+      onFinish: function () { self.onSessionFinish(); },
+      abort: function () { self.abortPending(); },
+    });
+
     container.innerHTML = `
       <div class="group-chips"></div>
       <div class="stage-counter"></div>
-      <div class="big-card">
+      <div class="big-card" data-echo-phase="">
         <div class="poop-row"></div>
         <div class="pic-slot"></div>
+        <div class="lang-pill"></div>
         <div class="es"></div>
         <div class="tag"></div>
         <div class="zh"></div>
@@ -234,13 +457,18 @@ const UnitEngine = (function () {
         <div class="phase-banner"></div>
         <div class="phase-hint"></div>
       </div>
+      <button class="btn primary play-all" data-act="play" type="button">▶ 播放整個單元</button>
       <div class="card-nav">
-        <button class="btn ghost" data-act="prev">⟵ 上一張</button>
-        <button class="btn" data-act="replay">🔁 念一次</button>
-        <button class="btn ghost" data-act="pause">⏸ 暫停</button>
-        <button class="btn ghost" data-act="next">下一張 ⟶</button>
+        <button class="btn ghost" data-act="prev" type="button">⟵ 上一張</button>
+        <button class="btn ghost" data-act="next" type="button">下一張 ⟶</button>
+      </div>
+      <div class="card-nav">
+        <button class="btn" data-act="once" type="button">🔊 念一次</button>
+        <button class="btn ghost" data-act="pause" type="button" disabled>⏸ 暫停</button>
+        <button class="btn ghost" data-act="stop" type="button" disabled>■ 停止</button>
       </div>
       <div class="speed-row"></div>
+      <p class="play-help">回音法跟原站一樣：每個單字或句子先聽發音，再心裡默念，然後大聲跟讀。同一個字兩輪都做完，才換下一個。西文和英文、動詞和現在分詞都是各自的卡片，不會接在同一輪裡。按「播放整個單元」會跨分類，把這個單元的圖卡依序走完。</p>
     `;
 
     self.chipsEl = container.querySelector(".group-chips");
@@ -248,6 +476,7 @@ const UnitEngine = (function () {
     self.cardEl = container.querySelector(".big-card");
     self.poopEl = container.querySelector(".poop-row");
     self.picSlot = container.querySelector(".pic-slot");
+    self.langEl = container.querySelector(".lang-pill");
     self.esEl = container.querySelector(".es");
     self.tagEl = container.querySelector(".tag");
     self.zhEl = container.querySelector(".zh");
@@ -255,10 +484,13 @@ const UnitEngine = (function () {
     self.bannerEl = container.querySelector(".phase-banner");
     self.hintEl = container.querySelector(".phase-hint");
     self.speedRow = container.querySelector(".speed-row");
+    self.playBtn = container.querySelector('[data-act="play"]');
     self.pauseBtn = container.querySelector('[data-act="pause"]');
+    self.stopBtn = container.querySelector('[data-act="stop"]');
 
     [0.6, 0.8, 1].forEach((sp) => {
       const b = document.createElement("button");
+      b.type = "button";
       b.className = "speed-btn" + (self.speed === sp ? " active" : "");
       b.textContent = sp + "x";
       b.addEventListener("click", () => {
@@ -266,40 +498,69 @@ const UnitEngine = (function () {
         localStorage.setItem("esp_speed", String(sp));
         self.speedRow.querySelectorAll(".speed-btn").forEach((x) => x.classList.remove("active"));
         b.classList.add("active");
-        self.audio.playbackRate = sp;
+        try { self.audio.playbackRate = sp; } catch (e) { /* ignore */ }
       });
       self.speedRow.appendChild(b);
     });
 
     self.renderChips();
-
     container.querySelector('[data-act="prev"]').addEventListener("click", () => self.prevCard());
     container.querySelector('[data-act="next"]').addEventListener("click", () => self.nextCard());
-    container.querySelector('[data-act="replay"]').addEventListener("click", () => self.playCurrentSegment());
+    container.querySelector('[data-act="once"]').addEventListener("click", () => self.playOnce());
+    self.playBtn.addEventListener("click", () => self.startUnit());
     self.pauseBtn.addEventListener("click", () => self.togglePause());
-    self.cardEl.style.cursor = "pointer";
+    self.stopBtn.addEventListener("click", () => self.stop());
     self.cardEl.addEventListener("click", (e) => {
       if (e.target.closest("button")) return;
       self.skipPhase();
     });
 
-    self.startCard(0);
+    self.renderCard();
+    self.setBanner("", "按「播放整個單元」開始");
+    self.hintEl.textContent = "輕點卡片可跳過目前這一段等待";
+    self.updateButtons();
   }
+
+  CardEchoPlayer.prototype.viewList = function () {
+    if (!this.filter) return this.allCards;
+    const list = this.allCards.filter((c) => c.group === this.filter);
+    return list.length ? list : this.allCards;
+  };
+
+  CardEchoPlayer.prototype.currentCard = function () {
+    const list = this.viewList();
+    if (!list.length) return null;
+    if (this.idx < 0 || this.idx >= list.length) this.idx = 0;
+    return list[this.idx];
+  };
+
+  CardEchoPlayer.prototype.globalIndexOfCurrent = function () {
+    const cur = this.currentCard();
+    if (!cur) return 0;
+    const i = this.allCards.indexOf(cur);
+    return i < 0 ? 0 : i;
+  };
 
   CardEchoPlayer.prototype.renderChips = function () {
     const self = this;
     self.chipsEl.innerHTML = "";
     if (!self.groups.length) return;
     const mk = (label, group) => {
-      const chip = document.createElement("div");
-      chip.className = "group-chip" + (self.activeGroup === group ? " active" : "");
+      const chip = document.createElement("button");
+      chip.type = "button";
+      const on = self.filter === group;
+      const curCard = self.currentCard();
+      const playingHere = !!(self.playing && group && curCard && curCard.group === group);
+      chip.className = "group-chip" + (on ? " active" : "") + (playingHere ? " playing" : "");
       chip.textContent = label;
       chip.addEventListener("click", () => {
-        self.activeGroup = group;
-        self.cards = group ? self.allCards.filter((c) => c.group === group) : self.allCards;
-        if (!self.cards.length) { self.activeGroup = null; self.cards = self.allCards.slice(); }
+        self.stop();
+        self.filter = group;
+        self.idx = 0;
+        self.finishedUnit = false;
         self.renderChips();
-        self.startCard(0);
+        self.renderCard();
+        self.setBanner("", "按「播放整個單元」開始");
       });
       return chip;
     };
@@ -314,159 +575,352 @@ const UnitEngine = (function () {
     }
   };
 
-  CardEchoPlayer.prototype.startCard = function (idx) {
+  CardEchoPlayer.prototype.abortPending = function () {
     this.clearTimer();
-    this.audio.pause();
-    if (!this.cards || !this.cards.length) {
-      this.activeGroup = null;
-      this.cards = (this.allCards || []).slice();
-      if (!this.cards.length) {
-        if (this.wordEl) this.wordEl.textContent = "（沒有可練習的卡片）";
-        return;
-      }
+    if (this._playSafety) {
+      clearTimeout(this._playSafety);
+      this._playSafety = null;
     }
-    this.idx = Math.max(0, Math.min(idx, this.cards.length - 1));
-    this.segIdx = 0;
-    this.round = 1;
-    this.phase = "listen";
-    this.paused = false;
-    this.pauseBtn.textContent = "⏸ 暫停";
-    this.renderCard();
-    this.runPhase();
+    try {
+      this.audio.onended = null;
+      this.audio.onerror = null;
+      this.audio.pause();
+    } catch (e) { /* ignore */ }
+    if (this._endPlay) {
+      const f = this._endPlay;
+      this._endPlay = null;
+      f("abort");
+    }
+    if (this._endWait) {
+      const f = this._endWait;
+      this._endWait = null;
+      f("abort");
+    }
   };
 
   CardEchoPlayer.prototype.renderCard = function () {
-    const card = this.cards[this.idx];
-    if (!card) return;
-    this.counterEl.textContent = `第 ${this.idx + 1} / ${this.cards.length} 張`;
-    this.poopEl.textContent = Rewards.renderPoop(`${this.unitId}:card:${card.id}`);
+    const card = this.currentCard();
+    const list = this.viewList();
+    this.cardEl.dataset.cardId = card ? card.id : "";
+    this.cardEl.dataset.echoPhase = this.phase || "";
+    if (!card) {
+      this.counterEl.textContent = "0 / 0";
+      this.esEl.textContent = "（沒有可練習的卡片）";
+      this.zhEl.textContent = "";
+      this.tagEl.textContent = "";
+      this.tipEl.textContent = "";
+      this.langEl.textContent = "";
+      this.poopEl.textContent = "";
+      this.picSlot.innerHTML = "";
+      return;
+    }
+    const pos = this.playing
+      ? `整個單元 ${this.globalIndexOfCurrent() + 1} / ${this.allCards.length}`
+      : `${this.idx + 1} / ${list.length}`;
+    const group = card.group ? ` ・ ${card.group}` : "";
+    const round = this.playing && this.round ? ` ・ 第 ${this.round}/2 輪` : "";
+    this.counterEl.textContent = pos + group + round;
+    const poopKey = `${this.unitId}:card:${card.id}`;
+    this.poopEl.textContent = window.Rewards ? Rewards.renderPoop(poopKey) : "";
     this.picSlot.innerHTML = "";
     this.picSlot.appendChild(renderPic(card.pic, card.es, card.col));
-    this.esEl.textContent = card.es;
+    const lang = card.lang === "en" ? "英文" : "西文";
+    this.langEl.textContent = lang;
+    this.langEl.className = "lang-pill " + (card.lang === "en" ? "lang-en" : "lang-es");
+    this.esEl.textContent = card.es || (card.segments[0] && card.segments[0].text) || "";
+    this.esEl.classList.toggle("hl", this.phase === "listen");
+    const long = (this.esEl.textContent || "").length;
+    this.esEl.style.fontSize = long > 48 ? "26px" : long > 28 ? "32px" : "";
     this.tagEl.textContent = card.tag || "";
     this.tagEl.style.display = card.tag ? "" : "none";
     this.zhEl.textContent = card.zh || "";
     this.tipEl.textContent = card.tip || "";
     this.tipEl.style.display = card.tip ? "" : "none";
-  };
-
-  CardEchoPlayer.prototype.currentSegment = function () {
-    const card = this.cards[this.idx];
-    return card ? card.segments[this.segIdx] : null;
-  };
-
-  CardEchoPlayer.prototype.playCurrentSegment = function () {
-    const seg = this.currentSegment();
-    if (!seg) return;
-    const src = audioSrcFor(seg.voice, seg.text);
-    if (!src) return;
-    this.audio.src = src;
-    this.audio.playbackRate = this.speed;
-    this.audio.currentTime = 0;
-    this.audio.play().catch(() => {});
+    this.cardEl.classList.toggle("is-listen", this.phase === "listen");
+    this.cardEl.classList.toggle("is-echo", this.phase === "echo");
+    this.cardEl.classList.toggle("is-shadow", this.phase === "shadow");
   };
 
   CardEchoPlayer.prototype.setBanner = function (phase, text) {
-    this.bannerEl.className = "phase-banner " + phase;
-    this.bannerEl.textContent = text;
+    this.bannerEl.className = "phase-banner" + (phase ? " " + phase : "");
+    this.bannerEl.textContent = text || "";
   };
 
-  CardEchoPlayer.prototype.runPhase = function () {
-    const self = this;
-    const card = self.cards[self.idx];
-    if (!card) return;
-    const seg = self.currentSegment();
-    if (!seg) {
-      self.finishCard();
-      return;
-    }
-    const hint = `詞 ${self.segIdx + 1}/${card.segments.length}（${seg.label}：${seg.text}） ・ 第 ${self.round}/2 輪 ・ 輕點卡片可跳過`;
-    self.hintEl.textContent = hint;
-
-    if (self.phase === "listen") {
-      self.setBanner("listen", "🎧 聽");
-      const src = audioSrcFor(seg.voice, seg.text);
-      if (src) {
-        self.audio.src = src;
-        self.audio.playbackRate = self.speed;
-        self.audio.currentTime = 0;
-        self.audio.onended = () => {
-          if (!self.paused) self.timer = setTimeout(() => self.setPhase("echo"), 250);
-        };
-        self.audio.play().catch(() => {
-          self.timer = setTimeout(() => self.setPhase("echo"), 900);
-        });
-      } else {
-        self.timer = setTimeout(() => self.setPhase("echo"), 900);
-      }
-    } else if (self.phase === "echo") {
-      self.setBanner("echo", "🔁 回音（心裡默念一次）");
-      if (!self.paused) self.timer = setTimeout(() => self.setPhase("shadow"), 1600);
-    } else if (self.phase === "shadow") {
-      self.setBanner("shadow", "🗣 跟讀（大聲說出來）");
-      if (!self.paused) self.timer = setTimeout(() => self.advance(), 2200);
-    }
+  CardEchoPlayer.prototype.updateButtons = function () {
+    this.playBtn.disabled = false;
+    this.playBtn.textContent = this.playing ? "▶ 播放中…" : "▶ 播放整個單元";
+    this.pauseBtn.disabled = !this.playing;
+    this.pauseBtn.textContent = this.paused ? "▶ 繼續" : "⏸ 暫停";
+    this.stopBtn.disabled = !this.playing && !this.paused;
   };
 
-  CardEchoPlayer.prototype.setPhase = function (phase) {
-    this.clearTimer();
+  CardEchoPlayer.prototype.onSessionCard = function (card, index) {
+    this.filter = null;
+    this.idx = index;
+    this.playing = true;
+    this.renderChips();
+    this.renderCard();
+  };
+
+  CardEchoPlayer.prototype.onSessionPhase = function (card, round, phase) {
     this.phase = phase;
-    this.runPhase();
+    this.round = round;
+    this.renderCard();
+    const seg = card.segments && card.segments[0];
+    const label = seg ? `${seg.label}｜${seg.text}` : card.es;
+    this.setBanner(phase, PHASE_TEXT[phase] || "");
+    this.hintEl.textContent = `${label} ・ 第 ${round}/2 輪 ・ 輕點卡片可跳過這一段`;
+    this.updateButtons();
   };
 
-  CardEchoPlayer.prototype.advance = function () {
-    this.clearTimer();
-    if (this.round < 2) {
-      this.round++;
-      this.phase = "listen";
-      this.runPhase();
-      return;
-    }
-    this.round = 1;
-    this.segIdx++;
-    const card = this.cards[this.idx];
-    if (card && this.segIdx < card.segments.length) {
-      this.phase = "listen";
-      this.runPhase();
-    } else {
-      this.finishCard();
-    }
+  CardEchoPlayer.prototype.onSessionDone = function (card) {
+    if (window.Rewards) Rewards.recordCardHeard(this.unitId, card.id);
+    this.poopEl.textContent = window.Rewards ? Rewards.renderPoop(`${this.unitId}:card:${card.id}`) : "";
+  };
+
+  CardEchoPlayer.prototype.onSessionFinish = function () {
+    this.playing = false;
+    this.paused = false;
+    this.phase = "";
+    this.round = 0;
+    this.finishedUnit = true;
+    this.filter = null;
+    this.idx = 0;
+    this.renderChips();
+    this.renderCard();
+    this.setBanner("shadow", "本單元播完");
+    this.hintEl.textContent = "已走完這個單元的全部分卡。再按一次會從頭播放。";
+    this.updateButtons();
+  };
+
+  CardEchoPlayer.prototype.playCardAudio = function (card) {
+    const self = this;
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = (v) => {
+        if (settled) return;
+        settled = true;
+        if (self._playSafety) {
+          clearTimeout(self._playSafety);
+          self._playSafety = null;
+        }
+        try {
+          self.audio.onended = null;
+          self.audio.onerror = null;
+        } catch (e) { /* ignore */ }
+        if (self._endPlay === finish) self._endPlay = null;
+        resolve(v);
+      };
+      if (self._endPlay) {
+        const prev = self._endPlay;
+        self._endPlay = null;
+        prev("abort");
+      }
+      self._endPlay = finish;
+      const seg = card && card.segments && card.segments[0];
+      const src = seg ? audioSrcFor(seg.voice, seg.text) : null;
+      if (!src) {
+        self._endPlay = null;
+        finish({ duration: 0.9, missing: true });
+        return;
+      }
+      try { self.audio.pause(); } catch (e) { /* ignore */ }
+      self.audio.onended = null;
+      self.audio.onerror = null;
+      self.audio.src = src;
+      self.audio.playbackRate = self.speed;
+      self.audio.onended = () => {
+        const intrinsic = self.audio.duration;
+        const d = intrinsic && isFinite(intrinsic) ? intrinsic / (self.speed || 1) : 0.9;
+        finish({ duration: d });
+      };
+      self.audio.onerror = () => finish({ duration: 0.9, error: true });
+      const armSafety = () => {
+        self._playSafety = setTimeout(() => {
+          if (self.session && self.session.paused && self.phase === "listen" && self._endPlay === finish) {
+            armSafety();
+            return;
+          }
+          const intrinsic = self.audio.duration;
+          const d = intrinsic && isFinite(intrinsic) ? intrinsic / (self.speed || 1) : 1;
+          finish({ duration: d, timeout: true });
+        }, 20000);
+      };
+      armSafety();
+      const p = self.audio.play();
+      if (p && p.catch) p.catch(() => finish({ duration: 0.9, blocked: true }));
+    });
+  };
+
+  CardEchoPlayer.prototype.waitSec = function (sec) {
+    const self = this;
+    const total = Math.max(0, sec) * 1000;
+    return new Promise((resolve) => {
+      let settled = false;
+      let left = total;
+      const finish = (v) => {
+        if (settled) return;
+        settled = true;
+        self.clearTimer();
+        if (self._endWait === finish) self._endWait = null;
+        resolve(v);
+      };
+      if (self._endWait) {
+        const prev = self._endWait;
+        self._endWait = null;
+        prev("abort");
+      }
+      self._endWait = finish;
+      const tick = () => {
+        if (settled) return;
+        if (!self.session || self._endWait !== finish) return;
+        if (self.session.gen !== genAtStart) return finish("abort");
+        if (self.session.paused) {
+          self.timer = setTimeout(tick, 40);
+          return;
+        }
+        if (left <= 0) return finish("ok");
+        const slice = Math.min(left, 80);
+        const started = performance.now();
+        self.timer = setTimeout(() => {
+          if (!(self.session && self.session.paused)) left -= performance.now() - started;
+          tick();
+        }, slice);
+      };
+      const genAtStart = self.session ? self.session.gen : 0;
+      tick();
+    });
   };
 
   CardEchoPlayer.prototype.skipPhase = function () {
-    this.clearTimer();
-    this.audio.pause();
-    if (this.phase === "listen") this.setPhase("echo");
-    else if (this.phase === "echo") this.setPhase("shadow");
-    else this.advance();
-  };
-
-  CardEchoPlayer.prototype.togglePause = function () {
-    this.paused = !this.paused;
-    if (this.paused) {
-      this.clearTimer();
-      this.audio.pause();
-      this.pauseBtn.textContent = "▶ 繼續";
-    } else {
-      this.pauseBtn.textContent = "⏸ 暫停";
-      this.runPhase();
+    if (!this.playing || this.paused) return;
+    if (this.phase === "listen" && this._endPlay) {
+      const intrinsic = this.audio.currentTime && this.audio.currentTime > 0.15 ? this.audio.currentTime : 0.8;
+      try { this.audio.pause(); } catch (e) { /* ignore */ }
+      const f = this._endPlay;
+      this._endPlay = null;
+      f({ duration: intrinsic / (this.speed || 1), skipped: true });
+      return;
+    }
+    if ((this.phase === "echo" || this.phase === "shadow") && this._endWait) {
+      const f = this._endWait;
+      this._endWait = null;
+      f("ok");
     }
   };
 
-  CardEchoPlayer.prototype.finishCard = function () {
-    const card = this.cards[this.idx];
-    this.setBanner("shadow", "✅ 完成！可切換下一張");
-    this.hintEl.textContent = "已標記練習紀錄";
-    Rewards.recordCardHeard(this.unitId, card.id);
-    this.poopEl.textContent = Rewards.renderPoop(`${this.unitId}:card:${card.id}`);
+  CardEchoPlayer.prototype.startUnit = function () {
+    if (!this.allCards.length) return;
+    const start = this.finishedUnit ? 0 : this.globalIndexOfCurrent();
+    this.finishedUnit = false;
+    this.filter = null;
+    this.idx = start;
+    this.playing = true;
+    this.paused = false;
+    this.renderChips();
+    this.updateButtons();
+    this.session.begin(this.allCards, start);
+  };
+
+  CardEchoPlayer.prototype.togglePause = function () {
+    if (!this.playing) return;
+    if (this.session.paused) {
+      this.session.resume();
+      this.paused = false;
+      if (this.phase === "listen") {
+        const p = this.audio.play();
+        if (p && p.catch) p.catch(() => {});
+      }
+    } else {
+      this.session.pause();
+      this.paused = true;
+      if (this.phase === "listen") {
+        try { this.audio.pause(); } catch (e) { /* ignore */ }
+      }
+    }
+    this.updateButtons();
+  };
+
+  CardEchoPlayer.prototype.stop = function () {
+    this.finishedUnit = false;
+    if (this.session) this.session.stop();
+    this.playing = false;
+    this.paused = false;
+    this.phase = "";
+    this.round = 0;
+    this.renderChips();
+    this.renderCard();
+    this.setBanner("", "已停止");
+    this.hintEl.textContent = "停在這張卡。按「播放整個單元」會從這裡繼續。";
+    this.updateButtons();
+  };
+
+  CardEchoPlayer.prototype.playOnce = function () {
+    const self = this;
+    const card = self.currentCard();
+    if (!card) return;
+    self.finishedUnit = false;
+    if (self.session) self.session.stop();
+    self.playing = false;
+    self.paused = false;
+    self.phase = "listen";
+    self.round = 0;
+    self.renderCard();
+    self.setBanner("listen", "聽");
+    self.hintEl.textContent = "只念一次，不進入回音";
+    self.updateButtons();
+    self.playCardAudio(card).then((r) => {
+      if (r === "abort") return;
+      self.phase = "";
+      self.renderCard();
+      self.setBanner("", "念完了");
+      if (window.Rewards) {
+        Rewards.recordCardHeard(self.unitId, card.id);
+        self.poopEl.textContent = Rewards.renderPoop(`${self.unitId}:card:${card.id}`);
+      }
+    });
   };
 
   CardEchoPlayer.prototype.prevCard = function () {
-    this.startCard(this.idx - 1 < 0 ? 0 : this.idx - 1);
+    if (this.playing) {
+      if (this.paused) {
+        this.session.resume();
+        this.paused = false;
+        this.updateButtons();
+      }
+      const at = typeof this.session.index === "number" ? this.session.index : this.globalIndexOfCurrent();
+      this.session.skipTo(at - 1);
+      return;
+    }
+    const list = this.viewList();
+    if (!list.length) return;
+    this.idx = (this.idx - 1 + list.length) % list.length;
+    this.finishedUnit = false;
+    this.phase = "";
+    this.renderCard();
+    this.setBanner("", "按「播放整個單元」開始");
   };
+
   CardEchoPlayer.prototype.nextCard = function () {
-    this.startCard(this.idx + 1 >= this.cards.length ? this.cards.length - 1 : this.idx + 1);
+    if (this.playing) {
+      if (this.paused) {
+        this.session.resume();
+        this.paused = false;
+        this.updateButtons();
+      }
+      const at = typeof this.session.index === "number" ? this.session.index : this.globalIndexOfCurrent();
+      this.session.skipTo(at + 1);
+      return;
+    }
+    const list = this.viewList();
+    if (!list.length) return;
+    this.idx = (this.idx + 1) % list.length;
+    this.finishedUnit = false;
+    this.phase = "";
+    this.renderCard();
+    this.setBanner("", "按「播放整個單元」開始");
   };
+
 
   // ===========================================================
   // 測驗
@@ -712,9 +1166,19 @@ const UnitEngine = (function () {
     }
   };
 
+  if (typeof document !== "undefined" && document.addEventListener) {
+    document.addEventListener("click", (e) => {
+      const t = e.target && e.target.closest ? e.target.closest(".tab") : null;
+      if (!t || !window.__activeEcho) return;
+      if (t.dataset.panel !== "cards") window.__activeEcho.stop();
+    });
+  }
+
   return {
     parseKeyPair,
     audioSrcFor,
+    echoWaits,
+    EchoSession,
     fromGQD,
     fromWordlist,
     CardEchoPlayer,

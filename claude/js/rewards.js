@@ -151,6 +151,41 @@ const Rewards = (function () {
   }
 
   // -------- recording practice events --------
+  // 舊版一張卡含多個音檔（西文＋英文、動詞＋現在分詞）。拆開後把原卡片的
+  // 「聽過」與 💩 複製到拆出來的新卡，不另加 XP、不清掉原紀錄。
+  function migrateSplitCards(unitId, cards, aliases) {
+    const groups = new Map();
+    (cards || []).forEach((c) => {
+      if (!c || !c.legacyId) return;
+      if (!groups.has(c.legacyId)) groups.set(c.legacyId, []);
+      groups.get(c.legacyId).push(c.id);
+    });
+    const st = loadState();
+    const u = ensureUnit(st, unitId);
+    st.poop = st.poop || {};
+    let changed = false;
+    const grant = (fromId, toId) => {
+      if (!fromId || !toId || fromId === toId) return;
+      const heard = u.cardsSeen.includes(fromId);
+      const poop = st.poop[`${unitId}:card:${fromId}`] || 0;
+      if (heard && !u.cardsSeen.includes(toId)) {
+        u.cardsSeen.push(toId);
+        changed = true;
+      }
+      const k = `${unitId}:card:${toId}`;
+      if (poop > 0 && (st.poop[k] || 0) < poop) {
+        st.poop[k] = poop;
+        changed = true;
+      }
+    };
+    groups.forEach((ids, legacyId) => {
+      ids.forEach((id) => grant(legacyId, id));
+    });
+    (aliases || []).forEach((a) => grant(a.fromId, a.toId));
+    if (changed) saveState(st);
+    return changed;
+  }
+
   function recordCardHeard(unit, itemId) {
     const st = loadState();
     const u = ensureUnit(st, unit);
@@ -209,7 +244,11 @@ const Rewards = (function () {
     const st = loadState();
     const u = st.units[unit] || { cardsSeen: [], quizSessions: [], speakSeen: [], storySeen: [] };
     if (kind === "cards") {
-      const n = u.cardsSeen.length;
+      let n = u.cardsSeen.length;
+      if (totals.cardIds && totals.cardIds.length) {
+        const known = new Set(totals.cardIds);
+        n = u.cardsSeen.filter((id) => known.has(id)).length;
+      }
       return { done: n > 0, crown: totals.cards ? n >= totals.cards : false, count: n, total: totals.cards || 0 };
     }
     if (kind === "quiz") {
@@ -316,6 +355,7 @@ const Rewards = (function () {
     saveState,
     addXP,
     recordCardHeard,
+    migrateSplitCards,
     recordQuizAnswer,
     recordQuizSession,
     recordSpeak,

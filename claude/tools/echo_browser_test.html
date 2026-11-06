@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>回音法瀏覽器檢查</title>
+<link rel="stylesheet" href="../css/style.css?v=12">
+<style>
+  body { margin: 0; }
+  #log { font-size: 14px; white-space: pre-wrap; padding: 8px 12px 24px; }
+  #status { padding: 8px 12px; font-weight: 800; }
+</style>
+</head>
+<body>
+<div id="status">測試中…</div>
+<div id="mount"></div>
+<div id="log"></div>
+<script>
+window.__errors = [];
+window.onerror = function (msg) { window.__errors.push(String(msg)); };
+class FakeAudio {
+  constructor() {
+    this.playbackRate = 1;
+    this.preservesPitch = true;
+    this.webkitPreservesPitch = true;
+    this.currentTime = 0;
+    this.onended = null;
+    this.onerror = null;
+    this._timer = null;
+    this._src = "";
+  }
+  get duration() { return 0.4; }
+  set src(v) { this._src = v; this.currentTime = 0; }
+  get src() { return this._src; }
+  play() {
+    clearTimeout(this._timer);
+    this._timer = setTimeout(() => {
+      this.currentTime = 0.4;
+      if (this.onended) this.onended();
+    }, 25);
+    return Promise.resolve();
+  }
+  pause() { clearTimeout(this._timer); }
+}
+window.Audio = FakeAudio;
+</script>
+<script src="../js/app.js?v=12"></script>
+<script src="../js/rewards.js?v=12"></script>
+<script src="../data/audio-manifest.js?v=12"></script>
+<script src="../data/u0-data.js?v=12"></script>
+<script src="../data/u1-data.js?v=12"></script>
+<script src="../data/u2-data.js?v=12"></script>
+<script src="../data/u3-data.js?v=12"></script>
+<script src="../data/u4-data.js?v=12"></script>
+<script src="../data/u5-data.js?v=12"></script>
+<script src="../js/unit-engine.js?v=12"></script>
+<script>
+"use strict";
+const lines = [];
+function say(s) { lines.push(s); document.getElementById("log").textContent = lines.join("\n"); }
+function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
+function assert(cond, msg) { say((cond ? "PASS " : "FAIL ") + msg); if (!cond) window.__fail = (window.__fail || 0) + 1; }
+
+const manifest = window.AUDIO_MANIFEST;
+["u0","u1","u2","u3","u4","u5"].forEach((id) => {
+  const raw = window.UNIT_DATA[id];
+  const deck = raw.W ? UnitEngine.fromWordlist(id, raw) : UnitEngine.fromGQD(id, raw);
+  let bad = 0;
+  deck.cards.forEach((c) => {
+    if (!c.segments || c.segments.length !== 1) bad++;
+    if (!c.es || !String(c.es).trim()) bad++;
+    const seg = c.segments[0];
+    if (!manifest[seg.voice + "|" + seg.text]) bad++;
+    if (new Set(c.segments.map((s) => s.voice)).size > 1) bad++;
+  });
+  assert(bad === 0, id + " 分卡、音檔、沒有空白（" + deck.cards.length + " 張）");
+});
+
+const cards = [
+  { id: "a", legacyId: "a", group: "甲", es: "hola", zh: "你好", tag: "西文", lang: "es", segments: [{ voice: "es", text: "hola", label: "西文" }] },
+  { id: "b", legacyId: "b", group: "甲", es: "hello", zh: "你好（英文）", tag: "英文", lang: "en", segments: [{ voice: "en", text: "hello", label: "英文" }] },
+  { id: "c", legacyId: "c", group: "乙", es: "adiós", zh: "再見", tag: "西文", lang: "es", segments: [{ voice: "es", text: "adiós", label: "西文" }] },
+];
+cards.aliases = [];
+
+const seen = [];
+function snap() {
+  const el = document.querySelector(".big-card");
+  const rec = {
+    id: el.dataset.cardId,
+    phase: el.dataset.echoPhase,
+    es: document.querySelector(".big-card > .es").textContent,
+    counter: document.querySelector(".stage-counter").textContent,
+  };
+  seen.push(rec);
+  return rec;
+}
+
+async function drill() {
+  const phasesHit = [];
+  const origPhase = UnitEngine.CardEchoPlayer.prototype.onSessionPhase;
+  UnitEngine.CardEchoPlayer.prototype.onSessionPhase = function (card, round, phase) {
+    phasesHit.push(phase);
+    return origPhase.call(this, card, round, phase);
+  };
+  const mount = document.getElementById("mount");
+  const player = new UnitEngine.CardEchoPlayer(mount, "t", cards, ["甲", "乙"]);
+  const es0 = document.querySelector(".big-card > .es").textContent;
+  assert(es0 === "hola", "第一張是 hola，不是空白（讀到 " + es0 + "）");
+  assert(document.querySelector(".lang-pill").textContent === "西文", "語言標籤是西文");
+  const play = document.querySelector('[data-act="play"]');
+  assert(play && play.getBoundingClientRect().height >= 48, "播放鈕夠大");
+  document.querySelectorAll(".card-nav .btn").forEach((b) => {
+    assert(b.getBoundingClientRect().height >= 44, "控制鈕高度 " + b.textContent.trim());
+  });
+  const overflow = document.documentElement.scrollWidth > document.documentElement.clientWidth + 2;
+  assert(!overflow, "沒有橫向溢出 scrollWidth=" + document.documentElement.scrollWidth + " client=" + document.documentElement.clientWidth);
+
+  play.click();
+  for (let i = 0; i < 24; i++) {
+    await sleep(40);
+    snap();
+    document.querySelector(".big-card").click();
+  }
+  await sleep(80);
+  snap();
+  const ids = [...new Set(seen.map((s) => s.id))];
+  assert(ids.includes("a") && ids.includes("b") && ids.includes("c"), "連續播放走過 a→b→c：" + ids.join(","));
+  const order = [];
+  seen.forEach((s) => { if (order[order.length - 1] !== s.id) order.push(s.id); });
+  const ai = order.indexOf("a"), bi = order.indexOf("b"), ci = order.indexOf("c");
+  assert(ai !== -1 && bi > ai && ci > bi, "順序先西文再英文再下一分類 " + order.join(">"));
+  assert(seen.some((s) => s.counter.includes("整個單元")), "計數標成整個單元");
+  const phaseSet = [...new Set(phasesHit)];
+  assert(phaseSet.includes("listen") && phaseSet.includes("echo") && phaseSet.includes("shadow"), "聽、回音、跟讀都有亮過：" + phaseSet.join(","));
+  assert(seen.every((s) => s.es && s.es.trim()), "播放過程沒有空白卡");
+
+  player.stop();
+  const stoppedId = document.querySelector(".big-card").dataset.cardId;
+  const stoppedBanner = document.querySelector(".phase-banner").textContent;
+  await sleep(220);
+  assert(document.querySelector(".big-card").dataset.cardId === stoppedId, "停止後不再跳卡");
+  assert(stoppedBanner.includes("停止"), "停止有提示：" + stoppedBanner);
+  assert(document.querySelector('[data-act="pause"]').disabled, "停止後暫停鈕停用");
+
+  document.querySelector('[data-act="play"]').click();
+  await sleep(30);
+  document.querySelector(".big-card").click();
+  await sleep(40);
+  const phase = document.querySelector(".big-card").dataset.echoPhase;
+  document.querySelector('[data-act="pause"]').click();
+  const pausedPhase = document.querySelector(".big-card").dataset.echoPhase;
+  const pausedId = document.querySelector(".big-card").dataset.cardId;
+  await sleep(260);
+  assert(document.querySelector(".big-card").dataset.cardId === pausedId, "暫停時卡片不變");
+  assert(document.querySelector(".big-card").dataset.echoPhase === pausedPhase, "暫停時階段不變 " + pausedPhase);
+  assert(document.querySelector('[data-act="pause"]').textContent.includes("繼續"), "暫停鈕變成繼續");
+  document.querySelector('[data-act="pause"]').click();
+  await sleep(40);
+  assert(document.querySelector('[data-act="pause"]').textContent.includes("暫停"), "繼續後恢復暫停鈕");
+  const beforeNext = document.querySelector(".big-card").dataset.cardId;
+  document.querySelector('[data-act="next"]').click();
+  await sleep(60);
+  const afterNext = document.querySelector(".big-card").dataset.cardId;
+  assert(afterNext && afterNext !== beforeNext, "播放中下一張會前進 " + beforeNext + " → " + afterNext);
+  document.querySelector('[data-act="stop"]').click();
+  await sleep(180);
+  assert(document.querySelector(".big-card").dataset.cardId === afterNext, "再停止後不再自己跳");
+  assert(window.__errors.length === 0, "沒有 JS 錯誤 " + window.__errors.join("; "));
+  player.startUnit();
+  await sleep(60);
+  document.querySelector(".big-card").scrollIntoView({ block: "center" });
+  const fails = window.__fail || 0;
+  document.getElementById("status").textContent = fails ? ("失敗 " + fails) : "全部通過";
+  document.getElementById("status").dataset.done = "1";
+  document.getElementById("status").dataset.fails = String(fails);
+}
+
+drill().catch((err) => {
+  window.__errors.push(String(err && err.stack || err));
+  say("FAIL exception " + err);
+  document.getElementById("status").textContent = "例外失敗";
+  document.getElementById("status").dataset.done = "1";
+  document.getElementById("status").dataset.fails = "1";
+});
+</script>
+</body>
+</html>

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>單元 5｜Ser + 形容詞・顏色</title>
-<link rel="stylesheet" href="./css/style.css?v=11">
+<link rel="stylesheet" href="./css/style.css?v=12">
 </head>
 <body>
   <div class="topbar"></div>
@@ -22,7 +22,7 @@
       多數以 <b>-o</b> 結尾的形容詞是陽性（rojo），改 <b>-a</b> 變陰性（roja）；加 <b>-s</b> 變複數（rojos/rojas）。<br>
       以 <b>-e</b> 或子音結尾的形容詞（如 verde、azul）陰陽性同形，只需加 <b>-s</b>（verdes、azules）變複數。<br>
       <b>Ser</b> 變化：yo soy、tú eres、él/ella es、nosotros somos、vosotros sois、ellos son，用來描述身分、性質、顏色等固定特徵（相對於 estar 描述狀態／位置）。<br>
-      第一組「陰性 vs 陽性」的詞彙會同時附上<b>西文與英文</b>發音，方便對照記憶。
+      「陰性 vs 陽性」的<b>西文和英文各是一張卡</b>，各自發音、各自回音，不會西英接在同一輪。
     </div>
 
     <div class="tabs">
@@ -36,11 +36,11 @@
     <div class="panel" id="panel-speak"></div>
   </div>
 
-  <script src="./js/app.js?v=11"></script>
-  <script src="./js/rewards.js?v=11"></script>
-  <script src="./data/audio-manifest.js?v=11"></script>
-  <script src="./data/u5-data.js?v=11"></script>
-  <script src="./js/unit-engine.js?v=11"></script>
+  <script src="./js/app.js?v=12"></script>
+  <script src="./js/rewards.js?v=12"></script>
+  <script src="./data/audio-manifest.js?v=12"></script>
+  <script src="./data/u5-data.js?v=12"></script>
+  <script src="./js/unit-engine.js?v=12"></script>
   <script>
     "use strict";
     const UNIT_ID = "u5";
@@ -50,7 +50,7 @@
 
     const raw = window.UNIT_DATA.u5;
     const deck = UnitEngine.fromGQD(UNIT_ID, raw);
-    const totals = { cards: deck.cards.length, speak: deck.speak.length, story: 0 };
+    const totals = { cards: deck.cards.length, cardIds: deck.cards.map((c) => c.id), speak: deck.speak.length, story: 0 };
 
     function refreshBadges() {
       Rewards.renderBadgeRow($("#badgeRow"), UNIT_ID, KINDS, totals);
