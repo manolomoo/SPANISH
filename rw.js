@@ -34,7 +34,8 @@ const css=document.createElement("style");css.textContent=`.rw-pop{position:fixe
 .rw-ban{position:sticky;top:0;z-index:99;background:#f5b301;color:#111;padding:10px;text-align:center;font-weight:700}.rw-ban button{margin-left:8px;padding:6px 12px;border-radius:8px;border:0;background:#111;color:#fff}
 .rwk{display:flex;align-items:center;gap:10px}.rwr{font-size:12px;color:var(--mu);line-height:1.6}`;document.head.appendChild(css);
 window.RW={LSOK:()=>LSOK,toast,emit,UNITS,dog,ust,tst,TN,RULE,celebrate,pget,ld,
-page(uid,cfg){const U=UNITS.find(x=>x.id===uid);const box=document.getElementById("rw");
+page(uid,cfg){try{const d=ld();if(d&&!d.pmSplit){d.pm=d.pm||{};[["u5|cards|masculine","u5|cards|masculino"],["u5|cards|feminine","u5|cards|femenino"],["u5|cards|singular_en","u5|cards|singular"],["u5|cards|plural_en","u5|cards|plural"],["u5|cards|The sun is masculine.","u5|cards|El sol es masculino."],["u5|cards|The cloud is feminine.","u5|cards|La nube es femenina."]].forEach(([a,b])=>{if(d.pm[a])d.pm[b]=Math.max(d.pm[b]||0,d.pm[a])});d.pmSplit=1;sv(d)}}catch(e){}
+const U=UNITS.find(x=>x.id===uid);const box=document.getElementById("rw");
 const sess={quiz:[0,0],hw:null};cfg.allCards=cfg.cards;RW.cfg=cfg;RW.uid=uid;
 function upd(t,fn){const d=ld();d[uid]=d[uid]||{};const x=d[uid][t]=d[uid][t]||{};const before=ust(U),bt=x.c?2:x.s?1:0;fn(x);x.s=1;sv(d);const at=x.c?2:1,after=ust(U);if(at===2&&bt!==2)emit({uid,t:"crown",ty:t});if(after===2&&before!==2)emit({uid,t:"king"});
 if(after===2&&before!==2)celebrate("單元 "+U.n+" 完成！<br>獲得 黑狗王 👑");else if(at===2&&bt!==2)celebrate(TN[t]+" 完成！<br>黑狗戴上皇冠 👑");else if(bt===0)celebrate("開始 "+TN[t]+"<br>獲得 黑狗 🐾",1);draw()}
