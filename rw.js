@@ -4,7 +4,8 @@ const UNITS=[
  {id:"u1",n:1,file:"week01.html",name:"冠詞",title:"定冠詞 el / la / los / las、不定冠詞 un / una / unos / unas",count:"24 個單字",types:["cards","quiz","speak"]},
  {id:"u2",n:2,file:"week02.html",name:"冠詞＋單字",title:"用冠詞認識新單字、短文 Un día de playa con Pepe",count:"29 個單字",types:["cards","quiz","speak","hang","story"]},
  {id:"u3",n:3,file:"week03.html",name:"動詞 Verbos 1",title:"10 個常用動詞的現在式變化＋現在分詞",count:"10 個動詞",types:["cards","quiz","speak"]},
- {id:"u4",n:4,file:"week04.html",name:"Estar + Gerundio",title:"正在做…：看圖說「Hay … en la foto. … está …」",count:"11 組造句",types:["cards","quiz","speak"]}];
+ {id:"u4",n:4,file:"week04.html",name:"Estar + Gerundio",title:"正在做…：看圖說「Hay … en la foto. … está …」",count:"11 組造句",types:["cards","quiz","speak"]},
+ {id:"u5",n:5,file:"week05.html",name:"Ser + 形容詞・顏色",title:"形容詞性數一致、顏色、動詞 Ser",count:"顏色＋Pronuncia＋Ser",types:["cards","quiz","speak"]}];
 const TN={cards:"圖卡聆聽",quiz:"小測驗",speak:"口說練習",hang:"吊人遊戲",story:"短文跟讀"};
 const RULE={cards:"每張圖卡的發音都聽過一次（點圖卡、念一次或回音法都算）",quiz:"同一次練習中作答滿 10 題，且正確率 ≥ 80%",speak:"在 5 張不同的卡／題目上按「念這句」或「看答案」並跟著說",hang:"猜對 3 個不同的單字",story:"短文每一句都聽過（全文連播一次即可）"};
 const KEY="esRW1";let MEM=null,LSOK=true;try{localStorage.setItem("__t","1");localStorage.removeItem("__t")}catch(e){LSOK=false}
