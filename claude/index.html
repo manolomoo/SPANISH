@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>西班牙文跟讀練習站</title>
-<link rel="stylesheet" href="./css/style.css?v=11">
+<link rel="stylesheet" href="./css/style.css?v=12">
 </head>
 <body>
   <div class="topbar">
@@ -30,16 +30,16 @@
     </footer>
   </div>
 
-  <script src="./js/app.js?v=11"></script>
-  <script src="./js/rewards.js?v=11"></script>
-  <script src="./data/audio-manifest.js?v=11"></script>
-  <script src="./data/u0-data.js?v=11"></script>
-  <script src="./data/u1-data.js?v=11"></script>
-  <script src="./data/u2-data.js?v=11"></script>
-  <script src="./data/u3-data.js?v=11"></script>
-  <script src="./data/u4-data.js?v=11"></script>
-  <script src="./data/u5-data.js?v=11"></script>
-  <script src="./js/unit-engine.js?v=11"></script>
+  <script src="./js/app.js?v=12"></script>
+  <script src="./js/rewards.js?v=12"></script>
+  <script src="./data/audio-manifest.js?v=12"></script>
+  <script src="./data/u0-data.js?v=12"></script>
+  <script src="./data/u1-data.js?v=12"></script>
+  <script src="./data/u2-data.js?v=12"></script>
+  <script src="./data/u3-data.js?v=12"></script>
+  <script src="./data/u4-data.js?v=12"></script>
+  <script src="./data/u5-data.js?v=12"></script>
+  <script src="./js/unit-engine.js?v=12"></script>
   <script>
     "use strict";
 
@@ -48,11 +48,11 @@
       if (!raw) return null;
       if (raw.G) {
         const deck = UnitEngine.fromGQD(unitId, raw);
-        return { cards: deck.cards.length, speak: deck.speak.length, story: 0 };
+        return { cards: deck.cards.length, cardIds: deck.cards.map((c) => c.id), speak: deck.speak.length, story: 0 };
       }
       if (raw.W) {
         const deck = UnitEngine.fromWordlist(unitId, raw);
-        return { cards: deck.cards.length, speak: deck.speak.length, story: deck.story.length };
+        return { cards: deck.cards.length, cardIds: deck.cards.map((c) => c.id), speak: deck.speak.length, story: deck.story.length };
       }
       return null;
     }

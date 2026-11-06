@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>單元 3｜動詞 1 Verbos</title>
-<link rel="stylesheet" href="./css/style.css?v=11">
+<link rel="stylesheet" href="./css/style.css?v=12">
 </head>
 <body>
   <div class="topbar"></div>
@@ -20,7 +20,8 @@
     <div class="note-box">
       <b>動詞變化：</b>西文動詞依主詞（yo / tú / él·ella / nosotros / vosotros / ellos）變化字尾。<br>
       規則動詞分三類：<b>-ar</b>（如 hablar、mirar、caminar）、<b>-er</b>（如 leer、coger、ver）、<b>-ir</b>（如 vestir）。<br>
-      <b>estar</b>、<b>jugar</b>、<b>hacer</b> 有不規則變化，要特別記。這裡先練 <b>Yo</b>（我）這個人稱，之後單元會延伸到進行時。
+      <b>estar</b>、<b>jugar</b>、<b>hacer</b> 有不規則變化，要特別記。這裡先練 <b>Yo</b>（我）這個人稱，之後單元會延伸到進行時。<br>
+      動詞原形和現在分詞分成兩張卡：一張聽完、心裡回音、再大聲跟讀，才換下一張。
     </div>
 
     <div class="tabs">
@@ -34,11 +35,11 @@
     <div class="panel" id="panel-speak"></div>
   </div>
 
-  <script src="./js/app.js?v=11"></script>
-  <script src="./js/rewards.js?v=11"></script>
-  <script src="./data/audio-manifest.js?v=11"></script>
-  <script src="./data/u3-data.js?v=11"></script>
-  <script src="./js/unit-engine.js?v=11"></script>
+  <script src="./js/app.js?v=12"></script>
+  <script src="./js/rewards.js?v=12"></script>
+  <script src="./data/audio-manifest.js?v=12"></script>
+  <script src="./data/u3-data.js?v=12"></script>
+  <script src="./js/unit-engine.js?v=12"></script>
   <script>
     "use strict";
     const UNIT_ID = "u3";
@@ -48,7 +49,7 @@
 
     const raw = window.UNIT_DATA.u3;
     const deck = UnitEngine.fromGQD(UNIT_ID, raw);
-    const totals = { cards: deck.cards.length, speak: deck.speak.length, story: 0 };
+    const totals = { cards: deck.cards.length, cardIds: deck.cards.map((c) => c.id), speak: deck.speak.length, story: 0 };
 
     function refreshBadges() {
       Rewards.renderBadgeRow($("#badgeRow"), UNIT_ID, KINDS, totals);

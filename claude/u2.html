@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>單元 2｜冠詞＋單字 Artículos + Vocabulario</title>
-<link rel="stylesheet" href="./css/style.css?v=11">
+<link rel="stylesheet" href="./css/style.css?v=12">
 </head>
 <body>
   <div class="topbar"></div>
@@ -36,11 +36,11 @@
     <div class="panel" id="panel-story"></div>
   </div>
 
-  <script src="./js/app.js?v=11"></script>
-  <script src="./js/rewards.js?v=11"></script>
-  <script src="./data/audio-manifest.js?v=11"></script>
-  <script src="./data/u2-data.js?v=11"></script>
-  <script src="./js/unit-engine.js?v=11"></script>
+  <script src="./js/app.js?v=12"></script>
+  <script src="./js/rewards.js?v=12"></script>
+  <script src="./data/audio-manifest.js?v=12"></script>
+  <script src="./data/u2-data.js?v=12"></script>
+  <script src="./js/unit-engine.js?v=12"></script>
   <script>
     "use strict";
     const UNIT_ID = "u2";
@@ -50,7 +50,7 @@
 
     const raw = window.UNIT_DATA.u2;
     const deck = UnitEngine.fromWordlist(UNIT_ID, raw);
-    const totals = { cards: deck.cards.length, speak: deck.speak.length, story: deck.story.length };
+    const totals = { cards: deck.cards.length, cardIds: deck.cards.map((c) => c.id), speak: deck.speak.length, story: deck.story.length };
 
     function refreshBadges() {
       Rewards.renderBadgeRow($("#badgeRow"), UNIT_ID, KINDS, totals);
