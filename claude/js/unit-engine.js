@@ -297,6 +297,7 @@ const UnitEngine = (function () {
       chip.addEventListener("click", () => {
         self.activeGroup = group;
         self.cards = group ? self.allCards.filter((c) => c.group === group) : self.allCards;
+        if (!self.cards.length) { self.activeGroup = null; self.cards = self.allCards.slice(); }
         self.renderChips();
         self.startCard(0);
       });
@@ -316,6 +317,14 @@ const UnitEngine = (function () {
   CardEchoPlayer.prototype.startCard = function (idx) {
     this.clearTimer();
     this.audio.pause();
+    if (!this.cards || !this.cards.length) {
+      this.activeGroup = null;
+      this.cards = (this.allCards || []).slice();
+      if (!this.cards.length) {
+        if (this.wordEl) this.wordEl.textContent = "（沒有可練習的卡片）";
+        return;
+      }
+    }
     this.idx = Math.max(0, Math.min(idx, this.cards.length - 1));
     this.segIdx = 0;
     this.round = 1;

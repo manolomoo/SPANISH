@@ -43,7 +43,7 @@ au.onended=fin;au.onerror=fin;au.onpause=fin;au.onplaying=()=>{if(!st)st=perform
 const p=au.play();if(p)p.catch(fin);setTimeout(fin,15000)})}
 const wait=s=>new Promise(r=>setTimeout(r,s*1000));
 function setCue(p){$("cue").textContent={listen:"聽",echo:"回音・心裡默念",shadow:"跟讀・大聲說出來"}[p]||"按「回音法播放」開始";$("cue").style.color=p==="shadow"?"var(--ac)":p?"":"var(--mu)"}
-function render(){const L=list(),c=L[i];$("pos").textContent=(i+1)+" / "+L.length;$("w").textContent=ph(c);$("zh").textContent=c[2];$("pic").innerHTML=pics(c[1],96);grid();
+function render(){if(!W||!W.length){return}if(!(i>=0&&i<W.length))i=0;const L=list(),c=L[i];$("pos").textContent=(i+1)+" / "+L.length;$("w").textContent=ph(c);$("zh").textContent=c[2];$("pic").innerHTML=pics(c[1],96);grid();
 $("tag").textContent=(c[0].toLowerCase().startsWith("un")?"不定冠詞":"定冠詞")+"・"+(c[0].endsWith("s")?"複數":"單數")+"・"+(/^(la|las|una|unas)$/i.test(c[0])?"陰性":"陽性");$("hs").textContent=sent(c);$("pl").textContent=playing?"暫停":"▶ 回音法播放"}
 function stop(){if($("sa"))$("sa").textContent="▶ 全文連播";run++;au.pause();playing=false;setCue("");$("w").classList.remove("hl");render()}
 async function once(t){stop();await play1(t)}
@@ -70,4 +70,4 @@ S.forEach((s,k)=>{const d=document.createElement("div");d.style.cssText="padding
 async function story(){stop();const r=run;$("sa").textContent="■ 停止";for(let k=0;k<S.length&&run===r;k++){const el=$("s"+k);el.style.borderColor="var(--ac)";el.scrollIntoView({block:"center",behavior:"smooth"});const d=await play1(S[k][0]);if(run!==r){el.style.borderColor="";break}await wait(d+1);el.style.borderColor=""}$("sa").textContent="▶ 全文連播"}
 $("sa").onclick=()=>{if($("sa").textContent.startsWith("■"))stop();else story()};$("hn").onclick();
 
-</script><script>window.PAGEVER="10"</script><script src="rw.js?v=10"></script><script src="rpg.js?v=10"></script><script>RW.page("u2",{qans:()=>W[qi][0].toLowerCase(),list:()=>list(),idx:()=>i,cardKey:c=>c[0]+" "+c[1],qkey:()=>W[qi][0]+" "+W[qi][1],hkey:()=>W[hi][1],cards:W.map(c=>c[0]+" "+c[1]),story:S.map(s=>s[0]),hang:()=>$("hr").textContent.startsWith("¡Muy bien")?W[hi][1]:null,score:()=>score,done:()=>done,speakBtn:$("hp"),speakText:()=>$("w").textContent});RPG.page()</script></body></html>
+</script><script>window.PAGEVER="11"</script><script src="rw.js?v=11"></script><script src="rpg.js?v=11"></script><script>RW.page("u2",{qans:()=>W[qi][0].toLowerCase(),list:()=>list(),idx:()=>i,cardKey:c=>c[0]+" "+c[1],qkey:()=>W[qi][0]+" "+W[qi][1],hkey:()=>W[hi][1],cards:W.map(c=>c[0]+" "+c[1]),story:S.map(s=>s[0]),hang:()=>$("hr").textContent.startsWith("¡Muy bien")?W[hi][1]:null,score:()=>score,done:()=>done,speakBtn:$("hp"),speakText:()=>$("w").textContent});RPG.page()</script></body></html>
