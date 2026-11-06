@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>單元 4｜Estar + Gerundio</title>
+<link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+  <div class="topbar"></div>
+
+  <div class="wrap">
+    <div class="hero">
+      <h1>單元 4・Estar + 現在分詞</h1>
+      <p>Estar + Gerundio — 現在進行時：「正在做某事」</p>
+    </div>
+
+    <div id="badgeRow"></div>
+
+    <div class="note-box">
+      <b>現在進行時：</b>西文用 <b>estar（變化）+ 現在分詞</b> 表示「正在做某事」，等於英文的 be + -ing。<br>
+      現在分詞：<b>-ar</b> 動詞字尾變 <b>-ando</b>（hablar → hablando）；<b>-er / -ir</b> 動詞字尾變 <b>-iendo</b>（leer → leyendo、vestir → vistiendo）。<br>
+      estar 變化：yo estoy、tú estás、él/ella está、nosotros estamos、vosotros estáis、ellos están。<br>
+      最後一組「照片造句」會先給一句 <b>Hay...</b>（有…）介紹照片，再練習用 estar + 分詞描述照片裡的人在做什麼。
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-panel="cards">🖼 圖卡</div>
+      <div class="tab" data-panel="quiz">📝 測驗</div>
+      <div class="tab" data-panel="speak">🗣 口說</div>
+    </div>
+
+    <div class="panel active" id="panel-cards"></div>
+    <div class="panel" id="panel-quiz"></div>
+    <div class="panel" id="panel-speak"></div>
+  </div>
+
+  <script src="./js/app.js"></script>
+  <script src="./js/rewards.js"></script>
+  <script src="./data/audio-manifest.js"></script>
+  <script src="./data/u4-data.js"></script>
+  <script src="./js/unit-engine.js"></script>
+  <script>
+    "use strict";
+    const UNIT_ID = "u4";
+    const KINDS = ["cards", "quiz", "speak"];
+
+    renderTopbar("單元 4・Estar + 現在分詞");
+
+    const raw = window.UNIT_DATA.u4;
+    const deck = UnitEngine.fromGQD(UNIT_ID, raw);
+    const totals = { cards: deck.cards.length, speak: deck.speak.length, story: 0 };
+
+    function refreshBadges() {
+      Rewards.renderBadgeRow($("#badgeRow"), UNIT_ID, KINDS, totals);
+    }
+    refreshBadges();
+
+    let cardsStarted = false, quizStarted = false, speakStarted = false;
+
+    function startCards() {
+      if (cardsStarted) return;
+      cardsStarted = true;
+      new UnitEngine.CardEchoPlayer($("#panel-cards"), UNIT_ID, deck.cards, deck.groups);
+    }
+    function startQuiz() {
+      if (quizStarted) return;
+      quizStarted = true;
+      new UnitEngine.QuizRunner($("#panel-quiz"), UNIT_ID, deck.quiz, { sessionSize: 12 });
+    }
+    function startSpeak() {
+      if (speakStarted) return;
+      speakStarted = true;
+      new UnitEngine.SpeakRunner($("#panel-speak"), UNIT_ID, deck.speak);
+    }
+    startCards();
+
+    $all(".tab").forEach((tab) => {
+      tab.addEventListener("click", () => {
+        $all(".tab").forEach((t) => t.classList.remove("active"));
+        $all(".panel").forEach((p) => p.classList.remove("active"));
+        tab.classList.add("active");
+        const panel = $("#panel-" + tab.dataset.panel);
+        panel.classList.add("active");
+        if (tab.dataset.panel === "cards") startCards();
+        if (tab.dataset.panel === "quiz") startQuiz();
+        if (tab.dataset.panel === "speak") startSpeak();
+        refreshBadges();
+      });
+    });
+
+    setInterval(refreshBadges, 2000);
+  </script>
+</body>
+</html>
