@@ -1,27 +1,27 @@
-/* 黑狗 RPG 升級系統（全站共用）— 需先載入 rw.js */
+/* 拳王系統（全站共用）— 需先載入 rw.js。黑狗徽章與💩仍由 rw.js 負責。 */
 (function(){
 const K="esRPG1";let MEM=null;
 const ld=()=>{try{const v=localStorage.getItem(K);if(v)return JSON.parse(v)}catch(e){}return MEM||{}};
 const sv=d=>{MEM=d;try{localStorage.setItem(K,JSON.stringify(d))}catch(e){}};
-const TITLES=[["Cachorro","幼犬"],["Perrito","小狗"],["Perro Curioso","好奇狗"],["Perro Estudiante","學生狗"],["Perro Explorador","探險狗"],["Perro Valiente","勇敢狗"],["Perro Sabio","智慧狗"],["Perro Caballero","騎士狗"],["Perro Capitán","隊長狗"],["Perro Maestro","大師狗"],["Gran Perro Negro","大黑狗"],["Rey Perro","黑狗王"]];
+const TITLES=[["Novato","拳擊學員"],["Aprendiz","見習拳手"],["Aficionado","業餘拳手"],["Boxeador","拳手"],["Sparring","對打拳手"],["Competidor","出賽拳手"],["Púgil","職業拳手"],["Contendiente","挑戰者"],["Finalista","決賽拳手"],["Campeón","冠軍"],["Gran Campeón","大冠軍"],["Rey del Ring","拳王"]];
 const need=L=>Math.round(60*Math.pow(L,1.45));            // Lv L → L+1 所需 XP
 function lvOf(xp){let L=1,r=xp;while(r>=need(L)){r-=need(L);L++}return{L,cur:r,nx:need(L)}}
 const title=L=>TITLES[Math.min(L,TITLES.length)-1];
 const ABIL=[
- {lv:2,id:"daily",name:"晨練加倍",desc:"每天前 10 次練習 XP ×2"},
- {lv:3,id:"hint1",name:"嗅覺提示 ×1",desc:"小測驗每天可用 1 次「💡 提示」刪掉一個錯誤選項"},
- {lv:4,id:"combo1",name:"連擊 Combo I",desc:"連續答對 3 題起，答題 XP ×1.2"},
- {lv:5,id:"bronze",name:"銅色項圈",desc:"頭像框解鎖：銅"},
- {lv:6,id:"hint2",name:"嗅覺提示 ×2",desc:"每天提示增為 2 次"},
- {lv:6,id:"xp10",name:"勤學 +10%",desc:"所有 XP +10%"},
- {lv:8,id:"combo2",name:"連擊 Combo II",desc:"連續答對 5 題起，答題 XP ×1.5"},
- {lv:8,id:"silver",name:"銀色項圈",desc:"頭像框解鎖：銀"},
- {lv:10,id:"hint3",name:"嗅覺提示 ×3",desc:"每天提示增為 3 次"},
- {lv:10,id:"xp20",name:"勤學 +20%",desc:"所有 XP +20%（取代 +10%）"},
- {lv:10,id:"cool",name:"墨鏡黑狗",desc:"狗狗造型解鎖：墨鏡"},
- {lv:10,id:"gold",name:"金色項圈",desc:"頭像框解鎖：金"},
- {lv:12,id:"combo3",name:"連擊 Combo III",desc:"連續答對 10 題起，答題 XP ×2"},
- {lv:12,id:"crown",name:"黑狗王冠",desc:"狗狗造型解鎖：皇冠"}];
+ {lv:2,id:"daily",name:"早訓加倍",desc:"每天前 10 次練習 XP ×2"},
+ {lv:3,id:"hint1",name:"教練提示 ×1",desc:"小測驗每天可用 1 次「💡 提示」刪掉一個錯誤選項"},
+ {lv:4,id:"combo1",name:"組合拳 I",desc:"連續答對 3 題起，答題 XP ×1.2"},
+ {lv:5,id:"bronze",name:"銅腰帶",desc:"頭像框解鎖：銅"},
+ {lv:6,id:"hint2",name:"教練提示 ×2",desc:"每天提示增為 2 次"},
+ {lv:6,id:"xp10",name:"出拳 +10%",desc:"所有 XP +10%"},
+ {lv:8,id:"combo2",name:"組合拳 II",desc:"連續答對 5 題起，答題 XP ×1.5"},
+ {lv:8,id:"silver",name:"銀腰帶",desc:"頭像框解鎖：銀"},
+ {lv:10,id:"hint3",name:"教練提示 ×3",desc:"每天提示增為 3 次"},
+ {lv:10,id:"xp20",name:"出拳 +20%",desc:"所有 XP +20%（取代 +10%）"},
+ {lv:10,id:"cool",name:"墨鏡上場",desc:"頭像造型解鎖：墨鏡"},
+ {lv:10,id:"gold",name:"金腰帶",desc:"頭像框解鎖：金"},
+ {lv:12,id:"combo3",name:"組合拳 III",desc:"連續答對 10 題起，答題 XP ×2"},
+ {lv:12,id:"crown",name:"拳王金冠",desc:"頭像造型解鎖：皇冠"}];
 const has=(L,id)=>ABIL.some(a=>a.id===id&&L>=a.lv);
 const ATTR={lis:"聽力",spk:"口說",voc:"詞彙",gra:"文法"};
 const attrOf=(t,uid)=>t==="cards"||t==="story"?"lis":t==="speak"?"spk":t==="hang"?"voc":t==="quiz"?(uid==="u2"?"voc":"gra"):null;
@@ -56,16 +56,16 @@ const css=document.createElement("style");css.textContent=`
 document.head.appendChild(css);
 function beep(){try{const A=window.AudioContext||window.webkitAudioContext;const c=new A();[523,659,784,1047].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.type="triangle";o.frequency.value=f;g.gain.setValueAtTime(.0001,c.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.18,c.currentTime+i*.12+.02);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+i*.12+.3);o.connect(g).connect(c.destination);o.start(c.currentTime+i*.12);o.stop(c.currentTime+i*.12+.32)});setTimeout(()=>c.close(),1500)}catch(e){}}
 function levelUp(L){const t=title(L),nw=ABIL.filter(a=>a.lv===L);const d=document.createElement("div");d.className="rp-up";
- d.innerHTML=`<div>${avatar(L,80)}<div style="font-weight:800;color:#7c5cff;margin-top:6px">LEVEL UP!</div><h2>Lv ${L}</h2><div style="font-size:20px;font-weight:800">${t[0]}｜${t[1]}</div>${nw.length?'<div style="margin-top:8px">解鎖：'+nw.map(a=>"<b>"+a.name+"</b>").join("、")+"</div>":""}</div>`;
+ d.innerHTML=`<div>${avatar(L,80)}<div style="font-weight:800;color:#7c5cff;margin-top:6px">晉級！</div><h2>Lv ${L}</h2><div style="font-size:20px;font-weight:800">${t[0]}｜${t[1]}</div>${nw.length?'<div style="margin-top:8px">解鎖：'+nw.map(a=>"<b>"+a.name+"</b>").join("、")+"</div>":""}</div>`;
  d.onclick=()=>d.remove();document.body.appendChild(d);setTimeout(()=>d.remove(),3300);beep();
- for(let k=0;k<20;k++){const c=document.createElement("span");c.className="rw-cf";c.textContent=["⭐","✨","🐾","💜"][k%4];c.style.left=Math.random()*100+"vw";c.style.animationDelay=Math.random()*.5+"s";document.body.appendChild(c);setTimeout(()=>c.remove(),2600)}}
+ for(let k=0;k<20;k++){const c=document.createElement("span");c.className="rw-cf";c.textContent=["⭐","✨","🥊","💜"][k%4];c.style.left=Math.random()*100+"vw";c.style.animationDelay=Math.random()*.5+"s";document.body.appendChild(c);setTimeout(()=>c.remove(),2600)}}
 function pop(txt){const e=document.createElement("div");e.className="rp-xp";e.textContent=txt;document.body.appendChild(e);setTimeout(()=>e.remove(),1300)}
 function gain(o){const s=st();const L0=lvOf(s.xp).L;let b,lab=[];
  if(o.t==="quiz")b=o.ok?BASE.quizOk:BASE.quizBad;else b=BASE[o.t];if(!b)return;let x=o.isNew===false?b[1]:b[0];
- if(o.t==="quiz"){if(o.ok){s.combo++;s.best=Math.max(s.best,s.combo);const m=has(L0,"combo3")&&s.combo>=10?2:has(L0,"combo2")&&s.combo>=5?1.5:has(L0,"combo1")&&s.combo>=3?1.2:1;if(m>1){x*=m;lab.push("Combo "+s.combo+" ×"+m)}}else s.combo=0}
+ if(o.t==="quiz"){if(o.ok){s.combo++;s.best=Math.max(s.best,s.combo);const m=has(L0,"combo3")&&s.combo>=10?2:has(L0,"combo2")&&s.combo>=5?1.5:has(L0,"combo1")&&s.combo>=3?1.2:1;if(m>1){x*=m;lab.push("組合拳 "+s.combo+" ×"+m)}}else s.combo=0}
  const a=attrOf(o.t,o.uid);if(a){const ab=attrBonus(s.at[a]);if(ab)x*=1+ab/100}
  const xb=has(L0,"xp20")?20:has(L0,"xp10")?10:0;if(xb)x*=1+xb/100;
- if(has(L0,"daily")&&s.day.n<10&&o.t!=="crown"&&o.t!=="king"){x*=2;lab.push("晨練×2")}if(o.t!=="crown"&&o.t!=="king")s.day.n++;
+ if(has(L0,"daily")&&s.day.n<10&&o.t!=="crown"&&o.t!=="king"){x*=2;lab.push("早訓×2")}if(o.t!=="crown"&&o.t!=="king")s.day.n++;
  x=Math.max(1,Math.round(x));s.xp+=x;if(a)s.at[a]=(s.at[a]||0)+x;sv(s);
  pop("+"+x+" XP"+(lab.length?" "+lab.join(" "):""));const L1=lvOf(s.xp).L;if(L1>L0)setTimeout(()=>levelUp(L1),400);drawMini();if(RPG.onChange)RPG.onChange()}
 let mini=null;function drawMini(){if(!mini)return;const s=st(),v=lvOf(s.xp),t=title(v.L);mini.innerHTML=`${avatar(v.L,30)}<div style="flex:1;min-width:0"><b>Lv ${v.L}</b> <span style="font-size:11px;color:var(--mu)">${t[1]}</span><div class="rp-bar"><i style="width:${Math.round(v.cur/v.nx*100)}%"></i></div></div>`}
@@ -78,10 +78,10 @@ function page(){migrate();mini=document.createElement("a");mini.className="rp-mi
  window.addEventListener("rwx",e=>gain(e.detail));
  if(window.quiz){const q=window.quiz;window.quiz=function(){q.apply(this,arguments);hintUI()};hintUI()}}
 function home(el){migrate();const draw=()=>{const s=st(),v=lvOf(s.xp),t=title(v.L);const[mx,left]=hints();const mxA=Math.max(1,...Object.keys(ATTR).map(a=>s.at[a]||0));
- el.innerHTML=`<div class="rp-card" id="rpg"><div class="rp-row">${avatar(v.L,64)}<div style="flex:1"><div style="font-size:13px;color:var(--mu)">我的黑狗角色</div><div style="font-size:22px;font-weight:900">Lv ${v.L}　${t[0]}</div><div style="font-weight:700">${t[1]}</div></div></div>
+ el.innerHTML=`<div class="rp-card" id="rpg"><div class="rp-row">${avatar(v.L,64)}<div style="flex:1"><div style="font-size:13px;color:var(--mu)">🥊 拳王系統</div><div style="font-size:22px;font-weight:900">Lv ${v.L}　${t[0]}</div><div style="font-weight:700">${t[1]}</div></div></div>
  <div style="display:flex;justify-content:space-between;font-size:13px;margin-top:10px;color:var(--mu)"><span>經驗值 ${v.cur} / ${v.nx}</span><span>總 XP ${s.xp}</span></div><div class="rp-bar"><i style="width:${Math.round(v.cur/v.nx*100)}%"></i></div>
  <div class="rp-at">${Object.entries(ATTR).map(([a,n])=>`<span>${n}</span><div class="rp-bar"><i style="width:${Math.round((s.at[a]||0)/mxA*100)}%;background:linear-gradient(90deg,#1a9a5a,#7ad38f)"></i></div><span style="font-size:12px">Lv${attrLv(s.at[a])} +${attrBonus(s.at[a])}%</span>`).join("")}</div>
- <div style="font-size:13px;margin-top:10px">今日：練習 ${s.day.n} 次${has(v.L,"daily")?"（晨練加倍剩 "+Math.max(0,10-s.day.n)+" 次）":""}・提示 ${left}/${mx}・目前連擊 ${s.combo}（最佳 ${s.best}）</div>
+ <div style="font-size:13px;margin-top:10px">今日：練習 ${s.day.n} 次${has(v.L,"daily")?"（早訓加倍剩 "+Math.max(0,10-s.day.n)+" 次）":""}・提示 ${left}/${mx}・目前連擊 ${s.combo}（最佳 ${s.best}）</div>
  <div class="rp-ab">${ABIL.map(a=>`<span class="${v.L>=a.lv?"on":"off"}" title="${a.desc}">${v.L>=a.lv?"✔":"🔒 Lv"+a.lv} ${a.name}</span>`).join("")}</div>
  <details class="rwr" style="margin-top:8px"><summary>升級規則</summary>
  XP：聽新卡 10（重聽 3）・答對 15（同題再答 8）・答錯 3・口說 12（重複 5）・吊人猜對 25・短文新句 8（重聽 3）・題型戴皇冠 +50・單元黑狗王 +150。<br>
