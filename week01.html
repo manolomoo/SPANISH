@@ -31,22 +31,20 @@ function pics(n,sz){const[c,k]=IM[n];const s=k>1?Math.round(sz*.42):sz;return Ar
 function tagOf(a){return(/^un/i.test(a)?"不定冠詞":"定冠詞")+"・"+(/(la|las|una|unas)$/i.test(a)?"陰性":"陽性")+"・"+(/s$/i.test(a)?"複數":"單數")}
 function grid(){const L=list();$("ga").innerHTML=L.map((c,k)=>`<div class="ca${k===i?" cur":""}" data-k="${k}"><span class="sp">🔊</span><div class="pic">${pics(c[1],84)}</div><div class="es"><span class="art">${c[0]}</span> ${c[1]}</div><div class="zh">${c[2]}</div><div class="tg">${tagOf(c[0])}</div></div>`).join("");
 $("ga").querySelectorAll(".ca").forEach(el=>el.onclick=()=>{stop();i=+el.dataset.k;render();once(ph(list()[i]))})}
-const $=id=>document.getElementById(id);let g=0,i=0,rate=0.8,run=0,playing=false,score=0,done=0,qi=0,pk=null;
+const $=id=>document.getElementById(id);let g=0,i=0,rate=0.8,run=0,auSess=0,auClip=0,auSettle=null,playing=false,score=0,done=0,qi=0,pk=null;
 const au=new Audio();au.preservesPitch=true;au.webkitPreservesPitch=true;
 const list=()=>W.slice(G[g][1],G[g][2]);const ph=c=>c[0]+" "+c[1];const sent=c=>"Hay "+(c[0].toLowerCase().startsWith("un")?c[0].toLowerCase()+" "+c[1]:"un perro")+" en la foto.";
 function seg(el,opts,sel,on){el.innerHTML="";opts.forEach((o,k)=>{const b=document.createElement("button");b.textContent=o;if(k===sel)b.className="on";b.onclick=()=>{on(k);seg(el,opts,k,on)};el.appendChild(b)})}
-function play1(key){return new Promise(res=>{let st=0,done=false;const fin=()=>{if(done)return;done=true;let d=st?(performance.now()-st)/1000:0;if(!(d>0.2))d=(au.duration||1)/rate;res(d)};
-if(!C[key]){console.warn("missing audio",key);fin();return}
-au.onended=fin;au.onerror=fin;au.onpause=fin;au.onplaying=()=>{if(!st)st=performance.now()};au.src=C[key];au.playbackRate=rate;au.defaultPlaybackRate=rate;
-const p=au.play();if(p)p.catch(fin);setTimeout(fin,15000)})}
-const wait=s=>new Promise(r=>setTimeout(r,s*1000));
+function cutAudio(){auSess++;const s=auSettle;auSettle=null;au.onended=au.onerror=au.onpause=au.onplaying=null;try{au.pause()}catch(e){}if(s)s()}
+function play1(key){const prev=auSettle;auSettle=null;if(prev)prev();auClip++;const clip=auClip,sess=auSess;au.onended=au.onerror=au.onpause=au.onplaying=null;return new Promise(res=>{let st=0,done=false,timer=0;const alive=()=>clip===auClip&&sess===auSess;const finish=(d)=>{if(done)return;done=true;clearTimeout(timer);if(auSettle===cancel)auSettle=null;res(alive()?d:null)};const cancel=()=>{if(done)return;done=true;clearTimeout(timer);res(null)};auSettle=cancel;const dur=()=>{let d=st?(performance.now()-st)/1000:0;if(!(d>0.2)){const x=au.duration;d=(x>0?x:1)/rate}return d};if(!C[key]){console.warn("missing audio",key);finish(1/rate);return}timer=setTimeout(()=>finish(dur()),15000);au.onended=()=>finish(dur());au.onerror=()=>finish(1/rate);au.onplaying=()=>{if(alive()&&!st)st=performance.now()};au.src=C[key];au.playbackRate=rate;au.defaultPlaybackRate=rate;const p=au.play();if(p&&p.catch)p.catch(()=>{if(alive())finish(1/rate)})})}
+const wait=s=>new Promise(r=>{const sess=auSess;setTimeout(()=>r(sess===auSess),s*1000)});
 function setCue(p){$("cue").textContent={listen:"聽",echo:"回音・心裡默念",shadow:"跟讀・大聲說出來"}[p]||"按「回音法播放」開始";$("cue").style.color=p==="shadow"?"var(--ac)":p?"":"var(--mu)"}
 function render(){if(!W||!W.length){return}if(!(i>=0&&i<W.length))i=0;const L=list(),c=L[i];$("pos").textContent=(i+1)+" / "+L.length;$("w").textContent=ph(c);$("zh").textContent=c[2];$("pic").innerHTML=pics(c[1],96);grid();
 $("tag").textContent=(c[0].toLowerCase().startsWith("un")?"不定冠詞":"定冠詞")+"・"+(c[0].endsWith("s")?"複數":"單數")+"・"+(/^(la|las|una|unas)$/i.test(c[0])?"陰性":"陽性");$("hs").textContent=sent(c);$("pl").textContent=playing?"暫停":"▶ 回音法播放"}
-function stop(){run++;au.pause();playing=false;setCue("");$("w").classList.remove("hl");render()}
+function stop(){cutAudio();run++;playing=false;setCue("");$("w").classList.remove("hl");render()}
 async function once(t){stop();await play1(t)}
-async function play(){const r=++run;playing=true;render();const ok=()=>run===r;const L=list();
-while(ok()&&i<L.length){render();for(let k=0;k<2;k++){setCue("listen");$("w").classList.add("hl");const d=await play1(ph(L[i]));$("w").classList.remove("hl");if(!ok())return;setCue("echo");await wait(Math.min(d,2));if(!ok())return;setCue("shadow");await wait(Math.max(1.5,d+1));if(!ok())return}i++}
+async function play(){cutAudio();const r=++run,sess=auSess;playing=true;render();const ok=()=>run===r&&auSess===sess;const L=list();
+while(ok()&&i<L.length){render();for(let k=0;k<2;k++){setCue("listen");$("w").classList.add("hl");const d=await play1(ph(L[i]));$("w").classList.remove("hl");if(d==null||!ok())return;setCue("echo");await wait(Math.min(d,2));if(!ok())return;setCue("shadow");await wait(Math.max(1.5,d+1));if(!ok())return}i++}
 if(ok()){playing=false;i=0;setCue("");render()}}
 function quiz(){const q=W[qi];const ok=q[0].toLowerCase();$("sc").textContent="答對 "+score+" / "+done;$("qw").textContent=(pk?q[0]:"___")+" "+q[1];$("qz").textContent=q[2];
 $("qo").innerHTML="";(ok.startsWith("un")?["un","una","unos","unas"]:["el","la","los","las"]).forEach(o=>{const b=document.createElement("button");b.className="b";b.textContent=o;
