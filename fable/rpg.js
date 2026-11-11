@@ -1,4 +1,4 @@
-/* 貴婦系統（全站共用）— 需先載入 rw.js。黑狗徽章與💩仍由 rw.js 負責。 */
+/* 貴婦系統（全站共用）— 需先載入 rw.js。練習紀錄與💩仍由 rw.js 負責。 */
 (function(){
 const K="esLadyRPG1";let MEM=null;
 const ld=()=>{try{const v=localStorage.getItem(K);if(v)return JSON.parse(v)}catch(e){}return MEM||{}};
@@ -96,8 +96,8 @@ function home(el){migrate();const draw=()=>{const s=st(),v=lvOf(s.xp),t=title(v.
  <div style="font-size:13px;margin-top:10px">今日：練習 ${s.day.n} 次${has(v.L,"daily")?"（早午餐加倍剩 "+Math.max(0,10-s.day.n)+" 次）":""}・提示 ${left}/${mx}・目前連續答對 ${s.combo}（最佳 ${s.best}）</div>
  <div class="rp-ab">${ABIL.map(a=>`<span class="${v.L>=a.lv?"on":"off"}" title="${a.desc}">${v.L>=a.lv?"✔":"🔒 Lv"+a.lv} ${a.name}</span>`).join("")}</div>
  <details class="rwr" style="margin-top:8px"><summary>升級規則</summary>
- XP：聽新卡 10（重聽 3）・答對 15（同題再答 8）・答錯 3・口說 12（重複 5）・吊人猜對 25・短文新句 8（重聽 3）・題型戴皇冠 +50・單元黑狗王 +150。<br>
+ XP：聽新卡 10（重聽 3）・答對 15（同題再答 8）・答錯 3・口說 12（重複 5）・吊人猜對 25・短文新句 8（重聽 3）・題型全部完成 +50・單元全部完成 +150。<br>
  屬性：聽卡／短文→聽力、口說→口說、吊人和單元 2 測驗→詞彙、其他測驗→文法。屬性每升 1 級，該類 XP +2%（上限 30%）。<br>
- 能力：${ABIL.map(a=>"Lv"+a.lv+" "+a.name+"："+a.desc).join("；")}。<br>${s.migXP?"已把之前的💩和徽章換算成 "+s.migXP+" XP。":""}</details></div>`};draw();RPG.onChange=draw}
+ 能力：${ABIL.map(a=>"Lv"+a.lv+" "+a.name+"："+a.desc).join("；")}。<br>${s.migXP?"已把之前的💩和練習紀錄換算成 "+s.migXP+" XP。":""}</details></div>`};draw();RPG.onChange=draw}
 window.RPG={page,home,st,lvOf,need,gain,hints,TITLES,ABIL};
 })();
