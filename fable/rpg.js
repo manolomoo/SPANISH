@@ -133,9 +133,22 @@ const css=document.createElement("style");css.textContent=`
 .rp-ab{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.rp-ab span{font-size:12px;padding:4px 8px;border-radius:99px;border:1px solid var(--ln)}.rp-ab .on{background:#7c5cff;color:#fff;border-color:#7c5cff}.rp-ab .off{color:var(--mu);opacity:.75}
 .rp-hint{margin:4px auto 0;padding:6px 12px;border-radius:99px;border:1px dashed #7c5cff;background:transparent;color:#7c5cff;font-weight:700;font-size:14px}
 .rp-as-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.rp-as-h b{font-size:18px}.rp-as-h span{font-size:13px;color:var(--mu);white-space:nowrap}
-.rp-as-v{font-size:26px;font-weight:900;margin:6px 0 8px;background:linear-gradient(90deg,#7c5cff,#f5b301);-webkit-background-clip:text;background-clip:text;color:transparent}
+.rp-as-v{font-size:22px;font-weight:900;line-height:1.3;min-width:0;overflow-wrap:anywhere;background:linear-gradient(90deg,#7c5cff,#f5b301);-webkit-background-clip:text;background-clip:text;color:transparent}
 .rp-as-v small{font-size:13px;font-weight:700;color:var(--mu);margin-right:6px}
-.rp-as-n{font-size:13px;color:var(--mu);margin-top:6px}.rp-as-q{font-size:13px;margin-top:8px;padding:8px 10px;border-radius:12px;border:1px dashed var(--ln);color:var(--fg)}
+.rp-as-n{font-size:13px;color:var(--mu);margin-top:6px;overflow-wrap:anywhere}.rp-as-q{font-size:13px;margin-top:8px;padding:8px 10px;border-radius:12px;border:1px dashed var(--ln);color:var(--fg)}
+.rp-card.rp-as{padding:0;overflow:hidden}
+.rp-as-t{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;margin:0;padding:12px 16px;border:0;border-radius:17px;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.rp-as-t:active{background:#7c5cff1f}.rp-as-t:focus{outline:none}.rp-as-t:focus-visible{outline:3px solid #7c5cff;outline-offset:-3px}
+@media(hover:hover){.rp-as-t:hover{background:#7c5cff12}}
+.rp-as-x{display:block;flex:1 1 auto;min-width:0}.rp-as-h{flex-wrap:wrap}.rp-as-h b{overflow-wrap:anywhere}
+.rp-as-l{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:0 10px;margin-top:2px}
+.rp-as-s{font-size:12px;color:var(--mu);overflow-wrap:anywhere}.rp-as.open .rp-as-s{display:none}
+.rp-as-c{flex:0 0 auto;width:32px;height:32px;border-radius:50%;border:1px solid var(--ln);display:flex;align-items:center;justify-content:center;font-style:normal;font-size:16px;line-height:1;color:#7c5cff}
+.rp-as-c::before{content:"▸"}.rp-as.open .rp-as-c::before{content:"▾"}
+.rp-as-b{display:grid;grid-template-rows:0fr;opacity:0;visibility:hidden;transition:grid-template-rows .25s ease,opacity .25s ease,visibility 0s .25s}
+.rp-as.open .rp-as-b{grid-template-rows:1fr;opacity:1;visibility:visible;transition:grid-template-rows .25s ease,opacity .25s ease,visibility 0s}
+.rp-as-bi{min-height:0;min-width:0;overflow:hidden}.rp-as-p{padding:0 16px 16px}
+@media(prefers-reduced-motion:reduce){.rp-as-b,.rp-as.open .rp-as-b{transition:none}}
 .rp-tabs{display:flex;gap:6px;overflow-x:auto;margin:12px -4px 10px;padding:0 4px 4px;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
 .rp-tabs button{flex:0 0 auto;min-height:44px;min-width:44px;padding:0 12px;border-radius:99px;border:1px solid var(--ln);background:var(--cd);color:var(--fg);font:inherit;font-size:13px;font-weight:700;white-space:nowrap;cursor:pointer}
 .rp-tabs button i{font-style:normal;font-weight:400;color:var(--mu);margin-left:4px;font-size:12px}.rp-tabs button.on{background:#7c5cff;border-color:#7c5cff;color:#fff}.rp-tabs button.on i{color:#fffc}
@@ -170,7 +183,7 @@ function levelUp(L){const t=title(L),nw=ABIL.filter(a=>a.lv===L);const d=documen
 function pop(txt){const e=document.createElement("div");e.className="rp-xp";e.textContent=txt;document.body.appendChild(e);setTimeout(()=>e.remove(),1300)}
 let homeEl=null;                                           // 首頁才有；單元頁用 mini
 function confetti(n,z){for(let k=0;k<n;k++){const c=document.createElement("span");c.className="rw-cf";c.textContent=["💎","✨","👜","👠","🎁"][k%5];c.style.left=Math.random()*100+"vw";c.style.animationDelay=Math.random()*.5+"s";if(z)c.style.zIndex=z;document.body.appendChild(c);setTimeout(()=>c.remove(),3000)}}
-function seeAll(){if(homeEl){const a=document.getElementById("assets");if(a&&a.scrollIntoView)a.scrollIntoView({behavior:"smooth",block:"start"})}else location.href="index.html#assets"}
+function seeAll(){asSet(true);if(homeEl){const a=document.getElementById("assets");asApply(a,true);if(a&&a.scrollIntoView)a.scrollIntoView({behavior:"smooth",block:"start"})}else location.href="index.html#assets"}
 // 開箱視窗（首頁、補開摘要）：點任何地方或「關閉」都會關，時間到自動關；一定移除節點，不鎖捲動、不碰音訊
 function openBox(items,sum){document.querySelectorAll(".rp-box").forEach(x=>x.remove());if(!items.length)return;const xp=st().xp,d=document.createElement("div");d.className="rp-box";d.setAttribute("role","dialog");let h;
  if(items.length===1&&!sum){const t=items[0];h=`<div class="k">🎁 開箱！</div><div class="e">${t.ico}</div><div class="n">${t.name}</div><div class="c">${catName(t.cat)}${t.grow?"・會隨 XP 增值":""}</div><div class="v">身價 ${money(trValue(t,xp))}</div><div class="bt"><button type="button">關閉</button></div>`}
@@ -206,18 +219,23 @@ function page(){migrate();mini=document.createElement("div");mini.className="rp-
  window.addEventListener("rwx",e=>gain(e.detail));
  if(window.quiz){const q=window.quiz;window.quiz=function(){q.apply(this,arguments);hintUI()};hintUI()}}
 let trTab="all";
-function assetsHTML(s){const xp=s.xp,got=owned(xp),nx=TREASURES.find(t=>xp<t.xp),list=trTab==="all"?TREASURES:TREASURES.filter(t=>t.cat===trTab);
+const AK="esLadyAssetsOpen";let asMem=false;               // 資產卡展開狀態：獨立的 key，不放進 esLadyRPG1；沒有 key ＝ 收合
+function asOpen(){try{const v=localStorage.getItem(AK);if(v!==null)return v==="1"}catch(e){}return asMem}
+function asSet(o){asMem=!!o;try{localStorage.setItem(AK,o?"1":"0")}catch(e){}}
+function asApply(a,o){if(!a)return;a.classList.toggle("open",!!o);const t=a.querySelector(".rp-as-t");if(t)t.setAttribute("aria-expanded",o?"true":"false")}
+function assetsHTML(s,op){const xp=s.xp,got=owned(xp),nx=TREASURES.find(t=>xp<t.xp),list=trTab==="all"?TREASURES:TREASURES.filter(t=>t.cat===trTab);
  const tabs=[["all","全部"]].concat(CATS).map(c=>{const a=c[0]==="all"?TREASURES:TREASURES.filter(t=>t.cat===c[0]);return `<button type="button" data-c="${c[0]}" class="${trTab===c[0]?"on":""}" aria-pressed="${trTab===c[0]}">${c[2]?c[2]+" ":""}${c[1]}<i>${a.filter(t=>xp>=t.xp).length}/${a.length}</i></button>`}).join("");
  const tiles=list.map(t=>xp>=t.xp?`<div class="rp-ti on"><div class="e">${t.ico}</div><div class="n">${t.name}</div><div class="v">${money(trValue(t,xp))}</div>${t.grow&&growPct(xp)?'<div class="g">📈 增值 +'+growPct(xp)+"%</div>":""}</div>`
   :`<div class="rp-ti off${t===nx?" nx":""}"><div class="e">${t.ico}</div><div class="n">？？？</div><div class="v">${t===nx?"還差 "+num(t.xp-xp)+" XP":"需 "+num(t.xp)+" XP"}</div><div class="c">${catName(t.cat)}</div></div>`).join("");
- return `<div class="rp-as-h"><b>👑 我的貴婦資產</b><span>已收藏 ${got.length}/${TREASURES.length}</span></div>
- <div class="rp-as-v"><small>總身價</small>${got.length?money(worth(xp)):"0 元"}</div>
- <div class="rp-bar"><i style="width:${Math.round(got.length/TREASURES.length*100)}%;background:linear-gradient(90deg,#7c5cff,#f5b301)"></i></div>
+ return `<button type="button" class="rp-as-t" aria-expanded="${op?"true":"false"}" aria-controls="rp-as-b"><span class="rp-as-x"><span class="rp-as-h"><b>👑 我的貴婦資產</b><span>已收藏 ${got.length}/${TREASURES.length}</span></span>
+ <span class="rp-as-l"><span class="rp-as-v"><small>總身價</small>${got.length?money(worth(xp)):"0 元"}</span><span class="rp-as-s">${nx?"下一件還差 "+num(nx.xp-xp)+" XP":"全部收藏齊了 🎉"}</span></span></span><i class="rp-as-c" aria-hidden="true"></i></button>
+ <div class="rp-as-b" id="rp-as-b"><div class="rp-as-bi"><div class="rp-as-p"><div class="rp-bar"><i style="width:${Math.round(got.length/TREASURES.length*100)}%;background:linear-gradient(90deg,#7c5cff,#f5b301)"></i></div>
  <div class="rp-as-n">${nx?"下一件寶藏："+catName(nx.cat)+"・還差 "+num(nx.xp-xp)+" XP 自動開箱":"全部寶藏都收藏齊了，頂級貴婦就是妳！"}</div>
  <div class="rp-as-q">💬 今日貴婦小語：${saying()}</div>
- <div class="rp-tabs" role="group" aria-label="寶藏分類">${tabs}</div><div class="rp-tg">${tiles}</div>`}
-function drawAssets(){const a=document.getElementById("assets");if(!a)return;const o=a.querySelector(".rp-tabs"),sl=o?o.scrollLeft:0;a.innerHTML=assetsHTML(st());const n=a.querySelector(".rp-tabs");if(n)n.scrollLeft=sl;
- n.onclick=e=>{const b=e.target.closest?e.target.closest("button[data-c]"):null;if(!b)return;trTab=b.getAttribute("data-c");drawAssets()}}
+ <div class="rp-tabs" role="group" aria-label="寶藏分類">${tabs}</div><div class="rp-tg">${tiles}</div></div></div></div>`}
+function drawAssets(){const a=document.getElementById("assets");if(!a)return;const o=a.querySelector(".rp-tabs"),sl=o?o.scrollLeft:0;const op=asOpen();a.classList.add("rp-as");a.classList.toggle("open",op);a.innerHTML=assetsHTML(st(),op);
+ const n=a.querySelector(".rp-tabs");if(n){n.scrollLeft=sl;n.onclick=e=>{const b=e.target.closest?e.target.closest("button[data-c]"):null;if(!b)return;trTab=b.getAttribute("data-c");drawAssets()}}
+ const t=a.querySelector(".rp-as-t");if(t)t.onclick=()=>{const o=!asOpen();asSet(o);asApply(a,o)}}
 function home(el){migrate();homeEl=el;const draw=()=>{const s=st(),v=lvOf(s.xp),t=title(v.L);const[mx,left]=hints();const mxA=Math.max(1,...Object.keys(ATTR).map(a=>s.at[a]||0));
  el.innerHTML=`<div class="rp-card" id="rpg"><div class="rp-row">${avatar(v.L,64)}<div style="flex:1"><div style="font-size:13px;color:var(--mu)">💎 貴婦系統</div><div style="font-size:22px;font-weight:900">Lv ${v.L}　${t[0]}</div><div style="font-weight:700">${t[1]}</div></div></div>
  <div style="display:flex;justify-content:space-between;font-size:13px;margin-top:10px;color:var(--mu)"><span>經驗值 ${v.cur} / ${v.nx}</span><span>總 XP ${s.xp}</span></div><div class="rp-bar"><i style="width:${Math.round(v.cur/v.nx*100)}%"></i></div>
